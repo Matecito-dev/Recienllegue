@@ -7,9 +7,11 @@ const ANON_KEY = process.env.NEXT_PUBLIC_MATECITODB_ANON_KEY ?? ''
  * Cliente público — anon key, para datos públicos.
  * Seguro para usar en Client Components ('use client').
  */
-export const publicDb = DB_URL && ANON_KEY
-  ? createClient(DB_URL, { apiKey: ANON_KEY, apiVersion: 'v2' })
-  : null as any
+if (!DB_URL || !ANON_KEY) {
+  console.error('[matecitodb] NEXT_PUBLIC_MATECITODB_URL o NEXT_PUBLIC_MATECITODB_ANON_KEY no están configuradas.')
+}
+
+export const publicDb = createClient(DB_URL || 'http://localhost', { apiKey: ANON_KEY || 'missing', apiVersion: 'v2' })
 
 /**
  * Versión ligera para el cliente que recibe el token manualmente.

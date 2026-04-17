@@ -15,6 +15,9 @@ import {
 import { publicDb as db } from '@/lib/db'
 import AppSectionNav from '@/components/AppSectionNav'
 import HeroParticles from '@/components/HeroParticles'
+import GeoPermissionBanner from '@/components/GeoPermissionBanner'
+import { useGeolocation } from '@/hooks/useGeolocation'
+import { useTracking } from '@/hooks/useTracking'
 
 interface Comercio {
   id: string
@@ -29,6 +32,8 @@ interface Comercio {
   walkTime: string
   isFeatured: boolean
   isVerified: boolean
+  lat: number | null
+  lng: number | null
 }
 
 interface Pagination {
@@ -260,68 +265,122 @@ function Paginator({ pagination, onChange }: { pagination: Pagination; onChange:
 }
 
 export default function ComerciosPage() {
-  const [comercios, setComercios] = useState<Comercio[]>([])
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1, limit: LIMIT })
+  // Todos los comercios cargados de una (120 registros)
+  const [allComercios, setAllComercios] = useState<Comercio[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountTime = useRef(Date.now())
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(false)
 
-  const load = useCallback(async (params: { page: number; search: string; category: string }) => {
-    setLoading(true)
-    setError(null)
+  const { coords, hasAsked, requestPermission, getDistanceKm } = useGeolocation()
+  const { trackClick, trackSearch, trackTimeOnPage } = useTracking()
 
-    try {
-      let query = db.from('comercios').latest().page(params.page).limit(LIMIT)
+  const showGeoBanner = !hasAsked && !bannerDismissed
 
-      if (params.search) query = query.search(params.search)
-      if (params.category) query = query.eq('category', params.category)
-
-      const res = await query.get()
-      setComercios(res.data as Comercio[])
-      setPagination({
-        page: res.page || 1,
-        pages: res.pages || 1,
-        total: res.total,
-        limit: LIMIT,
-      })
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+  // Cargar todos de una sola vez
+  useEffect(() => {
+    db.from('comercios').limit(500).find()
+      .then((data: any) => setAllComercios(data as Comercio[]))
+      .catch((e: any) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [])
 
+  // Track tiempo en página al salir
   useEffect(() => {
-    load({ page: 1, search, category })
-  }, [category, load])
+    return () => {
+      const seconds = Math.round((Date.now() - mountTime.current) / 1000)
+      trackTimeOnPage('/app/comercios', seconds)
+    }
+  }, [trackTimeOnPage])
+
+  const handleGeoAllow = async () => {
+    setGeoLoading(true)
+    await requestPermission('comercios_banner')
+    setGeoLoading(false)
+  }
 
   const handleSearch = (value: string) => {
     setSearch(value)
+    setCurrentPage(1)
+    trackSearch(value, '/app/comercios')
     if (debounce.current) clearTimeout(debounce.current)
-    debounce.current = setTimeout(() => load({ page: 1, search: value, category }), 350)
+    debounce.current = setTimeout(() => {}, 0) // reset
   }
 
   const handlePage = (page: number) => {
-    load({ page, search, category })
+    setCurrentPage(page)
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // Filtrar + ordenar client-side
+  const filtered = useMemo(() => {
+    let list = allComercios
+
+    if (category) {
+      list = list.filter((c) => c.category === category)
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter((c) =>
+        c.name?.toLowerCase().includes(q) ||
+        c.address?.toLowerCase().includes(q) ||
+        c.category?.toLowerCase().includes(q)
+      )
+    }
+
+    // Ordenar: si hay ubicación del usuario, por distancia; si no, destacados primero
+    if (coords) {
+      list = [...list].sort((a, b) => {
+        const dA = a.lat != null && a.lng != null ? getDistanceKm(a.lat, a.lng) ?? Infinity : Infinity
+        const dB = b.lat != null && b.lng != null ? getDistanceKm(b.lat, b.lng) ?? Infinity : Infinity
+        return dA - dB
+      })
+    } else {
+      list = [...list].sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured))
+    }
+
+    return list
+  }, [allComercios, category, search, coords, getDistanceKm])
+
+  // Paginación client-side
+  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginated = filtered.slice((safePage - 1) * LIMIT, safePage * LIMIT)
+
+  const pagination: Pagination = {
+    page: safePage,
+    pages: totalPages,
+    total: filtered.length,
+    limit: LIMIT,
+  }
+
   const featuredCount = useMemo(
-    () => comercios.filter((comercio) => comercio.isFeatured).length,
-    [comercios]
+    () => allComercios.filter((c) => c.isFeatured).length,
+    [allComercios]
   )
 
   const ratedCount = useMemo(
-    () => comercios.filter((comercio) => comercio.rating > 0).length,
-    [comercios]
+    () => allComercios.filter((c) => c.rating > 0).length,
+    [allComercios]
   )
 
   return (
     <div ref={topRef} className="max-w-6xl mx-auto px-4 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7">
       <AppSectionNav />
+      {showGeoBanner && (
+        <GeoPermissionBanner
+          onAllow={handleGeoAllow}
+          onDismiss={() => setBannerDismissed(true)}
+          loading={geoLoading}
+        />
+      )}
 
       <section className="space-y-4">
         <div
@@ -355,7 +414,7 @@ export default function ComerciosPage() {
 
         <div className="app-card p-4 sm:p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-2xl p-3" style={{ background: '#eef6f0' }}>
-            <p className="text-xl font-black leading-none" style={{ color: 'var(--accent)' }}>{pagination.total}</p>
+            <p className="text-xl font-black leading-none" style={{ color: 'var(--accent)' }}>{allComercios.length}</p>
             <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>lugares relevados</p>
           </div>
           <div className="rounded-2xl p-3" style={{ background: '#eef6f0' }}>
@@ -384,7 +443,12 @@ export default function ComerciosPage() {
             <h2 className="app-section-title text-xl">Encontrá por nombre o categoría</h2>
           </div>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {loading ? 'Actualizando listado...' : `${pagination.total} lugares disponibles en esta búsqueda`}
+            {loading
+            ? 'Cargando comercios...'
+            : coords
+              ? `${pagination.total} lugares · ordenados por cercanía 📍`
+              : `${pagination.total} lugares disponibles`
+          }
           </p>
         </div>
 
@@ -472,7 +536,7 @@ export default function ComerciosPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {Array.from({ length: LIMIT }).map((_, index) => <SkeletonCard key={index} />)}
           </div>
-        ) : comercios.length === 0 ? (
+        ) : paginated.length === 0 ? (
           <div className="app-card px-5 py-12 text-center">
             <p className="text-sm font-semibold" style={{ color: 'var(--text-muted-soft)' }}>
               No se encontraron comercios{search ? ` para "${search}"` : ''}.
@@ -481,8 +545,10 @@ export default function ComerciosPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {comercios.map((comercio) => (
-                <ComercioCard key={comercio.id} comercio={comercio} />
+              {paginated.map((comercio) => (
+                <div key={comercio.id} onClick={() => trackClick(comercio.id, 'comercio', '/app/comercios')}>
+                  <ComercioCard comercio={comercio} />
+                </div>
               ))}
             </div>
             <Paginator pagination={pagination} onChange={handlePage} />

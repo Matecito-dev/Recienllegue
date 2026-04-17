@@ -9,6 +9,9 @@ import {
 import { publicDb as db } from '@/lib/db'
 import AppSectionNav from '@/components/AppSectionNav'
 import { logout } from '@/app/actions/auth'
+import GeoPermissionPopup from '@/components/GeoPermissionPopup'
+import ProfileCompleteCard from '@/components/ProfileCompleteCard'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 // ─────────────────────────────────────────────────────────────────
 // 3D Tilt card — wrapper div que tiltea, inner div clipea
@@ -1000,12 +1003,63 @@ function ContactCard() {
 // ─── Page ──────────────────────────────────────────────────────
 
 export default function InicioPage() {
-  const { user } = useUser()
+  const { user, isLoggedIn } = useUser()
   const isAdmin = user?.role === 'admin'
+  const { status: geoStatus, hasAsked, requestPermission } = useGeolocation()
+  const [showGeoPopup, setShowGeoPopup] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [missingProfileFields, setMissingProfileFields] = useState<string[]>([])
+
+  // Mostrar popup de geo 3s después del mount, solo si no se vio antes
+  useEffect(() => {
+    if (!isLoggedIn) return
+    const timer = setTimeout(() => {
+      if (typeof localStorage !== 'undefined' && !localStorage.getItem('geo_popup_seen')) {
+        setShowGeoPopup(true)
+      }
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [isLoggedIn])
+
+  // Cargar perfil para detectar campos faltantes
+  useEffect(() => {
+    if (!user) return
+    db.from('profiles').eq('userId', user.id).find()
+      .then((res: any) => {
+        const profile = res[0]
+        if (!profile) return
+        const missing: string[] = []
+        if (!profile.career) missing.push('career')
+        if (!profile.city_origin) missing.push('city_origin')
+        if (!profile.year_of_study) missing.push('year_of_study')
+        setMissingProfileFields(missing)
+      })
+      .catch(() => {})
+  }, [user])
+
+  const handleGeoAllow = async () => {
+    setGeoLoading(true)
+    await requestPermission('onboarding_popup')
+    setGeoLoading(false)
+    localStorage.setItem('geo_popup_seen', 'true')
+    setShowGeoPopup(false)
+  }
+
+  const handleGeoDismiss = () => {
+    localStorage.setItem('geo_popup_seen', 'true')
+    setShowGeoPopup(false)
+  }
 
   return (
     <div className="pb-24 lg:pb-12 lg:px-8 max-w-6xl mx-auto">
       <PwaInstallPopup />
+      {showGeoPopup && (
+        <GeoPermissionPopup
+          onAllow={handleGeoAllow}
+          onDismiss={handleGeoDismiss}
+          loading={geoLoading}
+        />
+      )}
 
       {/* Top nav desktop */}
       <div className="px-4 sm:px-5 lg:px-0 pt-5 lg:pt-8">
@@ -1026,6 +1080,9 @@ export default function InicioPage() {
       {/* Content */}
       <div className="px-4 sm:px-5 mt-8 sm:mt-10 space-y-10 sm:space-y-12">
         <PwaInstallCard />
+        {isLoggedIn && missingProfileFields.length > 0 && (
+          <ProfileCompleteCard missingFields={missingProfileFields} />
+        )}
         <OnboardingSection />
         <EventosSection />
         <ComerciosDestacados />

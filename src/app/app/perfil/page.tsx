@@ -17,6 +17,8 @@ interface Profile {
   bio?: string
   age?: number | string
   contact?: string
+  city_origin?: string
+  year_of_study?: number | null
 }
 
 function ProfileAvatar({
@@ -91,6 +93,8 @@ export default function PerfilPage() {
   const [bio, setBio] = useState('')
   const [age, setAge] = useState('')
   const [contact, setContact] = useState('')
+  const [cityOrigin, setCityOrigin] = useState('')
+  const [yearOfStudy, setYearOfStudy] = useState('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -112,6 +116,8 @@ export default function PerfilPage() {
           setBio(current.bio ?? '')
           setAge(current.age != null ? String(current.age) : '')
           setContact(current.contact ?? '')
+          setCityOrigin(current.city_origin ?? '')
+          setYearOfStudy(current.year_of_study != null ? String(current.year_of_study) : '')
         }
         setName(user.name ?? '')
       })
@@ -153,6 +159,8 @@ export default function PerfilPage() {
         bio: bio.trim(),
         age: age !== '' ? Number(age) : null,
         contact: contact.trim(),
+        city_origin: cityOrigin.trim(),
+        year_of_study: yearOfStudy !== '' ? Number(yearOfStudy) : null,
       })
 
       setProfile((prev) => (
@@ -346,6 +354,37 @@ export default function PerfilPage() {
                       className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
                       style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted-soft)' }}>
+                      Ciudad de origen
+                    </label>
+                    <input
+                      type="text"
+                      value={cityOrigin}
+                      onChange={(event) => setCityOrigin(event.target.value)}
+                      placeholder="Ej: Buenos Aires"
+                      className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
+                      style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted-soft)' }}>
+                      Año de cursada
+                    </label>
+                    <select
+                      value={yearOfStudy}
+                      onChange={(event) => setYearOfStudy(event.target.value)}
+                      className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
+                      style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)', color: yearOfStudy ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                    >
+                      <option value="">Seleccioná un año</option>
+                      {[1,2,3,4,5,6].map(y => (
+                        <option key={y} value={y}>{y}° año</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="sm:col-span-2">

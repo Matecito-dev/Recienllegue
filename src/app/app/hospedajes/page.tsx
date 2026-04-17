@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { MapPin, Users, BadgeCheck, Phone, BedDouble, ChevronRight } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
 import AppSectionNav from '@/components/AppSectionNav'
 import HeroParticles from '@/components/HeroParticles'
+import GeoPermissionBanner from '@/components/GeoPermissionBanner'
+import { useGeolocation } from '@/hooks/useGeolocation'
+import { useTracking } from '@/hooks/useTracking'
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -120,6 +123,12 @@ export default function HospedajesPage() {
   const [hospedajes, setHospedajes] = useState<Hospedaje[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState('')
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(false)
+  const mountTime = useRef(Date.now())
+
+  const { hasAsked, requestPermission } = useGeolocation()
+  const { trackClick, trackTimeOnPage } = useTracking()
 
   useEffect(() => {
     db.from('hospedajes').latest().limit(50).find()
@@ -127,6 +136,22 @@ export default function HospedajesPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  // Track tiempo en página al salir
+  useEffect(() => {
+    return () => {
+      const seconds = Math.round((Date.now() - mountTime.current) / 1000)
+      trackTimeOnPage('/app/hospedajes', seconds)
+    }
+  }, [trackTimeOnPage])
+
+  const showGeoBanner = !hasAsked && !bannerDismissed
+
+  const handleGeoAllow = async () => {
+    setGeoLoading(true)
+    await requestPermission('hospedajes_banner')
+    setGeoLoading(false)
+  }
 
   const filtered = useMemo(() => {
     if (!selectedType) return hospedajes
@@ -192,6 +217,14 @@ export default function HospedajesPage() {
         </aside>
       </section>
 
+      {showGeoBanner && (
+        <GeoPermissionBanner
+          onAllow={handleGeoAllow}
+          onDismiss={() => setBannerDismissed(true)}
+          loading={geoLoading}
+        />
+      )}
+
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
@@ -255,7 +288,9 @@ export default function HospedajesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(h => (
-            <HospedajeCard key={h.id} h={h} />
+            <div key={h.id} onClick={() => trackClick(h.id, 'hospedaje', '/app/hospedajes')}>
+              <HospedajeCard h={h} />
+            </div>
           ))}
         </div>
       )}

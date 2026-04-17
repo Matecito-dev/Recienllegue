@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(xargs grep:*)",
+      "Bash(sed \"s/.*\\\\.from\\('//g\")",
+      "Bash(sed \"s/'.*//g\")",
+      "Bash(npm run:*)",
+      "WebFetch(domain:matecito.dev)",
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
     ]
   }
 }
