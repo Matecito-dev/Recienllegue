@@ -166,7 +166,7 @@ export default function DestacadosPage() {
 
   const loadData = () => {
     db.from('featured_businesses').latest().limit(50).find()
-      .then(data => {
+      .then((data: any) => {
         setItems(data as any)
         setLoading(false)
       })

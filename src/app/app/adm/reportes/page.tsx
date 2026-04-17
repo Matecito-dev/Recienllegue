@@ -104,7 +104,7 @@ export default function ReportesPage() {
   useEffect(() => {
     setLoading(true)
     db.from('muro_reports').latest().page(page).limit(LIMIT).get()
-      .then(res => {
+      .then((res: any) => {
         setReports(res.data as any)
         setTotal(res.total)
       })

@@ -589,7 +589,7 @@ function ComerciosDestacados() {
 
   useEffect(() => {
     db.from('comercios').eq('isFeatured', true).limit(6).find()
-      .then(data => setItems(data as any)).catch(() => {}).finally(() => setLoading(false))
+      .then((data: any) => setItems(data as any)).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   return (
@@ -664,7 +664,7 @@ function RemisesSection() {
   const [remises, setRemises] = useState<Remis[]>([])
 
   useEffect(() => {
-    db.from('remises').limit(50).find().then(data => setRemises(data as any)).catch(() => {})
+    db.from('remises').limit(50).find().then((data: any) => setRemises(data as any)).catch(() => {})
   }, [])
 
   const principal = remises.find(r => r.destacado) ?? remises[0]
@@ -815,7 +815,7 @@ function EventosSection() {
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-CA')
     db.from('eventos').gte('dateSortable', today).order('dateSortable', { ascending: true }).limit(50).get()
-      .then(res => res.data && setEventos(res.data as any)).catch(() => {})
+      .then((res: any) => res.data && setEventos(res.data as any)).catch(() => {})
   }, [])
 
   if (eventos.length === 0) return null

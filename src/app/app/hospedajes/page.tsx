@@ -123,7 +123,7 @@ export default function HospedajesPage() {
 
   useEffect(() => {
     db.from('hospedajes').latest().limit(50).find()
-      .then(data => setHospedajes(data as any))
+      .then((data: any) => setHospedajes(data as any))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

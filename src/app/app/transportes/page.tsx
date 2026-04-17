@@ -143,14 +143,14 @@ export default function TransportesPage() {
 
   useEffect(() => {
     db.from('remises').oldest().limit(50).find()
-      .then((data) => setRemises(data as Remis[]))
+      .then((data: any) => setRemises(data as Remis[]))
       .catch(() => {})
       .finally(() => setRemisLoading(false))
   }, [])
 
   useEffect(() => {
     db.from('colectivos').oldest().limit(20).find()
-      .then((data) => {
+      .then((data: any) => {
         setRamales(data as Ramal[])
         if (data?.length) setActivoId(data[0].id)
       })

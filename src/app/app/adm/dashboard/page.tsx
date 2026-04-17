@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
     })
 
     db.from('muro_reports').latest().limit(10).find()
-      .then(data => {
+      .then((data: any) => {
         setReports(data as any)
         setReportsLoading(false)
       })

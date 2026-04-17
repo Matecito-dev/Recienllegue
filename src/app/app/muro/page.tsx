@@ -267,7 +267,7 @@ function CommentsSection({ post, token, currentUserId, userName, onComment }: {
 
   useEffect(() => {
     db.from('muro_comments').eq('postId', post.id).latest().limit(50).find()
-      .then((data) => setComments(data as Comment[]))
+      .then((data: any) => setComments(data as Comment[]))
       .finally(() => setLoading(false))
   }, [post.id])
 
@@ -375,7 +375,7 @@ function PostCard({ post, token, currentUserId, userName, onDelete, onLike }: {
   useEffect(() => {
     if (!token || !currentUserId) return
     db.from('muro_likes').eq('postId', post.id).eq('userId', currentUserId).find()
-      .then((res) => setLiked(res.length > 0))
+      .then((res: any) => setLiked(res.length > 0))
   }, [post.id, token, currentUserId])
 
   const handleLike = async () => {
@@ -512,7 +512,7 @@ export default function MuroPage() {
 
   useEffect(() => {
     if (!user) return
-    db.from('profiles').eq('userId', user.id).find().then((profiles) => {
+    db.from('profiles').eq('userId', user.id).find().then((profiles: any) => {
       if (profiles?.[0]?.role) setUserRole(profiles[0].role)
     })
   }, [user])

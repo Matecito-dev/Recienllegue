@@ -104,7 +104,7 @@ export default function PerfilPage() {
     setLoading(true)
 
     db.from('profiles').eq('userId', user.id).find()
-      .then((res) => {
+      .then((res: any) => {
         const current = res[0] as Profile | undefined
         if (current) {
           setProfile(current)
