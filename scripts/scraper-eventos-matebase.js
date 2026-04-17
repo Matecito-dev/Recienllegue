@@ -5,11 +5,11 @@ const cheerio   = require('cheerio')
 
 // El proyecto está embebido en el subdominio (ej: recienllegue.matecito.dev)
 // no se necesita PROJECT_ID separado
-const API_BASE    = process.env.NEXT_PUBLIC_MATECITODB_URL
+const API_BASE    = process.env.MATECITODB_URL
 const SERVICE_KEY = process.env.MATECITODB_SERVICE_KEY
 
 if (!API_BASE || !SERVICE_KEY) {
-  console.error('Faltan variables de entorno: NEXT_PUBLIC_MATECITODB_URL, MATECITODB_SERVICE_KEY')
+  console.error('Faltan variables de entorno: MATECITODB_URL, MATECITODB_SERVICE_KEY')
   process.exit(1)
 }
 

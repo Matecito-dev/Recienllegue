@@ -33,5 +33,5 @@ jobs:
         run: node scraper-eventos-matebase.js
         working-directory: scripts
         env:
-          NEXT_PUBLIC_MATECITODB_URL: ${{ secrets.MATECITODB_URL }}
+          MATECITODB_URL: ${{ secrets.MATECITODB_URL }}
           MATECITODB_SERVICE_KEY: ${{ secrets.MATECITODB_SERVICE_KEY }}
