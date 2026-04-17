@@ -212,7 +212,7 @@ export default function AdminComerciosPage() {
 
   useEffect(() => {
     db.from('comercios').latest().limit(100).find()
-      .then(records => setRecords(records as any))
+      .then((records: any) => setRecords(records as any))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

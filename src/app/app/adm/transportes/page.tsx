@@ -144,7 +144,7 @@ export default function AdminTransportesPage() {
 
   useEffect(() => {
     db.from('remises').oldest().limit(50).find()
-      .then(records => setRecords(records as any))
+      .then((records: any) => setRecords(records as any))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
