@@ -1,185 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  /* PALETA BASE */
+  --color-brand-bg: #f8faf8;
+  --color-brand-surface: #ffffff;
+  --color-brand-text: #051f20;
+  --color-brand-primary: #163832;
+  --color-brand-secondary: #235347;
+  --color-brand-mint: #daf1de;
+  --color-brand-mint-strong: #a8ddb5;
+  --color-brand-primary-soft: #1e4d44;
+  --color-brand-border: rgba(22, 56, 50, 0.08);
+  --color-brand-border-strong: rgba(22, 56, 50, 0.14);
+  --color-brand-muted: rgba(22, 56, 50, 0.5);
+  --color-brand-muted-soft: rgba(22, 56, 50, 0.4);
+  --color-brand-muted-faint: rgba(22, 56, 50, 0.06);
+  --color-brand-overlay: rgba(5, 31, 32, 0.6);
+
+  /* Mapeo de sistema */
+  --color-background: var(--color-brand-bg);
+  --color-foreground: var(--color-brand-text);
+}
+
 :root {
-  /* Premium Palette - Indigo & Slate with high-end tones */
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --primary-light: #818cf8;
-  --secondary: #f43f5e;
-  --accent: #10b981;
-
-  --background: #f8fafc;
-  --foreground: #0f172a;
-
-  --surface: #ffffff;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --text-muted: #64748b;
-
-  --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 2rem;
-  --radius-full: 9999px;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-premium: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
-
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-blur: 12px;
-
-  color-scheme: light only !important;
+  --background: var(--color-brand-bg);
+  --foreground: var(--color-brand-text);
+  --surface: var(--color-brand-surface);
+  --surface-strong: var(--color-brand-primary);
+  --surface-soft: var(--color-brand-muted-faint);
+  --text-primary: var(--color-brand-text);
+  --text-secondary: var(--color-brand-secondary);
+  --text-muted: var(--color-brand-muted);
+  --text-muted-soft: var(--color-brand-muted-soft);
+  --accent: var(--color-brand-primary);
+  --accent-strong: var(--color-brand-primary-soft);
+  --accent-contrast: var(--color-brand-mint);
+  --accent-highlight: var(--color-brand-mint-strong);
+  --border-subtle: var(--color-brand-border);
+  --border-strong: var(--color-brand-border-strong);
+  --overlay: var(--color-brand-overlay);
+  --shadow-soft: 0 18px 50px rgba(22, 56, 50, 0.12);
+  --radius-card: 1.5rem;
 }
 
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  -webkit-tap-highlight-color: transparent;
-  /* No blue highlight on mobile */
-}
-
-html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  font-family: var(--font-quicksand), system-ui, sans-serif;
-  background: var(--background) !important;
-  color: var(--foreground) !important;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
-  color-scheme: light only !important;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --surface: #ffffff;
-    --surface-hover: #f1f5f9;
-    --border: #e2e8f0;
-    --text-muted: #64748b;
-  }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  html,
-  body {
-    background-color: var(--background) !important;
-    color: var(--foreground) !important;
+@layer base {
+  * {
+    @apply border-brand-primary/10;
   }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+html {
+  scroll-behavior: smooth;
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
 }
 
-ul {
-  list-style: none;
+.app-section-title {
+  color: var(--text-primary);
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
-/* Utils */
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-
-@media (max-width: 1023px) {
-  .app-shell {
-    max-width: 500px;
-    margin: 0 auto;
-    min-height: 100vh;
-    position: relative;
-    background: var(--background);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .main-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .desktop-only {
-    display: none !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .app-shell {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    background-color: var(--background);
-    position: relative;
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  /* Ruido visual en desktop */
-  .app-shell::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0.03;
-    pointer-events: none;
-    z-index: 9999;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-  }
-
-  .main-wrapper {
-    flex: 1;
-    margin-left: 0;
-    padding: 0;
-    max-width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    background: var(--surface);
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Scrollbar estético para el contenedor principal */
-  .main-wrapper::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .main-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .main-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--border);
-    border-radius: var(--radius-full);
-  }
-
-  .mobile-only {
-    display: none !important;
-  }
-
-  /* Anular padding de la barra inferior móvil en Escritorio */
-  .safe-bottom {
-    padding-bottom: 0 !important;
-  }
-}
-
-.safe-bottom {
-  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
+.app-section-kicker {
+  color: var(--text-muted-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }

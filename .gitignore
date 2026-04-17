@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Docs privados (claves, guías de deploy)
+/docs
+
 # dependencies
 /node_modules
 /.pnp
@@ -29,16 +32,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+.pnpm-store/
 
 # env files (can opt-in for committing if needed)
 .env*
 
 # vercel
 .vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+.turbo/
+.cache/
+dist/
 
 # next-video
 videos/*
@@ -48,6 +52,19 @@ videos/*
 public/_next-video
 
 /src/generated/prisma
+
+# ide
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# local env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # pwa
 public/sw.js

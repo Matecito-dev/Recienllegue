@@ -1,0 +1,43 @@
+collection usuarios (auth) {
+  name        text
+  username    text @unique
+  bio         text
+  phone       text
+  avatarseed  text
+  avatar      file
+  role        select("ESTUDIANTE", "DUENO", "ADMIN") @required
+
+  @rules {
+    list   : id = @request.auth.id
+    view   : auth
+    create : public
+    update : id = @request.auth.id
+    delete : id = @request.auth.id
+  }
+}
+
+collection comercios (base) {
+  name           text @required
+  category       text
+  categories     json
+  rating         number
+  reviewsCount   number
+  address        text
+  phone          text
+  website        text
+  googleMapsUrl  text
+  lat            number
+  lng            number
+  distanceMeters number
+  walkTime       text
+  isFeatured     bool
+  isVerified     bool
+
+  @rules {
+    list   : public
+    view   : public
+    create : auth
+    update : auth
+    delete : auth
+  }
+}

@@ -1,0 +1,123 @@
+# Recién Llegué — Guía para estudiantes universitarios en Pergamino, Buenos Aires, Argentina
+
+## Qué es este sitio
+
+Recién Llegué es una app web y PWA para estudiantes que llegan a Pergamino (Buenos Aires, Argentina) a estudiar en la UNNOBA (Universidad Nacional del Noroeste de la Provincia de Buenos Aires).
+El sitio centraliza información sobre alojamiento, transporte, comercios y eventos locales.
+
+## Público objetivo
+
+Estudiantes universitarios ingresantes y avanzados de la UNNOBA Pergamino. Jóvenes de 17 a 30 años que buscan alquilar, moverse y vivir en Pergamino.
+
+## Servicios cubiertos
+
+### Alojamiento
+- alojamiento estudiantes pergamino
+- alquiler estudiantes pergamino
+- pensiones estudiantiles pergamino
+- departamentos monoambiente pergamino
+- habitaciones compartidas pergamino
+- residencias universitarias pergamino
+- hospedaje urgente pergamino
+- alquiler sin garantia pergamino
+- alquiler dueño directo pergamino
+- alquiler barato pergamino
+
+### Transporte
+- remis 24hs pergamino
+- colectivos urbanos pergamino
+- tarifas transporte pergamino
+- bicicletas alquiler pergamino
+- remis cerca unnoba pergamino
+
+### Gastronomía
+- comida universitaria pergamino
+- delivery pergamino
+- supermercado economico pergamino
+
+### Salud y bienestar
+- farmacia pergamino
+- psicologia bienestar pergamino
+- gym deporte pergamino
+
+### Servicios
+- fotocopiadora libreria pergamino
+- lavanderia pergamino
+- internet wifi pergamino
+- banco cajero pergamino
+- seguro inquilino pergamino
+- mudanza flete pergamino
+- veterinaria pergamino
+- fotocopia carnet pergamino
+
+## Barrios cubiertos
+
+- Barrio Monteagudo (2 cuadras de la Sede UNNOBA Monteagudo)
+- Barrio Centro (zona céntrica de Pergamino)
+- Barrio Acevedo
+- Barrio Trocha
+- Barrio Belgrano
+- Zona Terminal
+- Barrio Norte
+- Barrio Mariano Moreno
+
+## Modificadores y long-tails
+
+- barato / economico para estudiantes
+- cerca unnoba / a pasos de la facultad
+- para ingresantes 2026
+- sin garantia / sin garante
+- dueño directo / sin inmobiliaria
+- precios 2026 / tarifas actualizadas
+
+## Long-tails principales
+
+- donde vivir en pergamino siendo estudiante
+- alojamiento cerca de la unnoba pergamino
+- pensiones estudiantiles con comida pergamino
+- departamento para compartir pergamino unnoba
+- habitacion amueblada cerca unnoba
+- remis barato desde terminal pergamino
+- colectivo a unnoba desde barrio monteagudo
+- alquiler sin inmobiliaria pergamino ingresante
+- hospedaje urgente llegada pergamino
+- que hacer cuando llegás a estudiar a pergamino
+
+## URLs principales
+
+- / (landing principal)
+- /pergamino/alojamiento-estudiantes
+- /pergamino/alquiler-estudiantes
+- /pergamino/pensiones-estudiantiles
+- /pergamino/departamentos-monoambiente
+- /pergamino/habitaciones-compartidas
+- /pergamino/residencias-universitarias
+- /pergamino/hospedaje-urgente
+- /pergamino/remis-24hs
+- /pergamino/colectivos-urbanos
+- /pergamino/tarifas-transporte
+- /pergamino/bicicletas-alquiler
+- /pergamino/fotocopiadora-libreria
+- /pergamino/lavanderia
+- /pergamino/internet-wifi
+- /pergamino/supermercado-economico
+- /pergamino/gym-deporte
+- /pergamino/farmacia
+- /pergamino/banco-cajero
+- /pergamino/comida-universitaria
+- /pergamino/delivery-pergamino
+- /pergamino/psicologia-bienestar
+- /pergamino/seguro-inquilino
+- /pergamino/mudanza-flete
+- /pergamino/veterinaria
+- /pergamino/fotocopia-carnet
+- /app/inicio (app — dashboard principal)
+- /app/hospedajes (listado de hospedajes verificados)
+- /app/comercios (comercios amigables para estudiantes)
+- /app/transportes (remises y transporte)
+- /app/muro (comunidad estudiantil)
+
+## Institución referenciada
+
+UNNOBA — Universidad Nacional del Noroeste de la Provincia de Buenos Aires
+Sede Monteagudo, Pergamino, Buenos Aires, Argentina
