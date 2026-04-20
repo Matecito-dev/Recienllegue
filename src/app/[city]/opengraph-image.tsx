@@ -4,15 +4,7 @@ import { cities } from '@/data/seo-data'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export async function generateImageMetadata({
-  params,
-}: {
-  params: Promise<{ city: string }>
-}) {
-  const { city: citySlug } = await params
-  const city = cities[citySlug]
-  return [{ id: citySlug, alt: city ? `Vivir en ${city.name} como Estudiante` : 'Recién Llegué' }]
-}
+export const alt = 'Recién Llegué — Guía estudiantil'
 
 export default async function OgImage({
   params,

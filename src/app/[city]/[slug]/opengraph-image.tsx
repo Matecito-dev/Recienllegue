@@ -4,16 +4,7 @@ import { cities } from '@/data/seo-data'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export async function generateImageMetadata({
-  params,
-}: {
-  params: Promise<{ city: string; slug: string }>
-}) {
-  const { city: citySlug, slug } = await params
-  const city = cities[citySlug]
-  const service = city?.services[slug]
-  return [{ id: slug, alt: service?.metaTitle ?? 'Recién Llegué' }]
-}
+export const alt = 'Recién Llegué'
 
 const CATEGORY_EMOJI: Record<string, string> = {
   alojamiento: '🏠',
