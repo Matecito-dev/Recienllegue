@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { generateBaseSitemap } from '@/data/seo-data'
+import { BARRIOS } from '@/data/seo-data'
 import { growthPages } from '@/data/public-growth-pages'
 import { serverDb } from '@/lib/db-server'
 
@@ -17,6 +18,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE_URL, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'weekly', priority: 1.0 },
     { url: `${BASE_URL}/pergamino`, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/soy-propietario`, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/como-verificamos`, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/pergamino/guia-ingresantes-unnoba-2026`, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${BASE_URL}/pergamino/checklist-mudanza`, lastModified: SEO_LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.8 },
   ]
 
   const generatedPages: MetadataRoute.Sitemap = landingUrls.map((url) => ({
@@ -48,5 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ]
 
-  return [...staticPages, ...generatedPages, ...growthUrls, ...listingUrls]
+  const barrioUrls: MetadataRoute.Sitemap = BARRIOS.map((barrio) => ({
+    url: `${BASE_URL}/pergamino/barrios/${barrio.slug}`,
+    lastModified: SEO_LAST_MODIFIED,
+    changeFrequency: 'monthly',
+    priority: 0.75,
+  }))
+
+  return [...staticPages, ...generatedPages, ...growthUrls, ...barrioUrls, ...listingUrls]
 }

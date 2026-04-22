@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import PublicShareButton from '@/components/PublicShareButton'
+import ReportListingIssue from '@/components/ReportListingIssue'
 
 export default function PublicListingPage({
   item,
@@ -39,6 +40,7 @@ export default function PublicListingPage({
             {item.googleMapsUrl && <a href={item.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: 'rgba(15,23,42,0.06)', color: '#0F172A' }}>Ver mapa</a>}
             <PublicShareButton title={title} text="Mirá este detalle en Recién Llegué" url={publicPath} />
             <Link href={backHref} className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ color: 'rgba(15,23,42,0.62)' }}>Ver más en la app</Link>
+            <ReportListingIssue collection={kind === 'comercio' ? 'comercios' : 'hospedajes'} recordId={item.id} />
           </aside>
         </div>
       </section>
