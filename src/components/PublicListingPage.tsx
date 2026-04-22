@@ -3,48 +3,137 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import PublicShareButton from '@/components/PublicShareButton'
 import ReportListingIssue from '@/components/ReportListingIssue'
+import PublicListingMap from '@/components/PublicListingMap'
+
+function mapsExternalUrl(item: any) {
+  if (item.googleMapsUrl) return item.googleMapsUrl
+  const lat = item.lat ?? item.latitude
+  const lng = item.lng ?? item.longitude
+  if (lat != null && lng != null) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+  const query = [item.name, item.address, 'Pergamino'].filter(Boolean).join(', ')
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+}
+
+function DetailRow({ label, value }: { label: string; value?: React.ReactNode }) {
+  if (!value) return null
+  return (
+    <div className="rounded-2xl p-4" style={{ background: '#F8FAFC', border: '1px solid rgba(15,23,42,0.06)' }}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'rgba(15,23,42,0.42)' }}>{label}</p>
+      <div className="text-sm font-bold mt-1" style={{ color: '#0F172A' }}>{value}</div>
+    </div>
+  )
+}
 
 export default function PublicListingPage({
   item,
   kind,
   backHref,
+  chrome = 'public',
 }: {
   item: any
   kind: 'comercio' | 'hospedaje'
   backHref: string
+  chrome?: 'public' | 'app'
 }) {
   const images = Array.isArray(item.images) ? item.images : []
   const title = item.name ?? (kind === 'comercio' ? 'Comercio' : 'Hospedaje')
   const publicPath = `/${kind === 'comercio' ? 'comercios' : 'hospedajes'}/${item.id}`
+  const phoneDigits = item.phone ? String(item.phone).replace(/\D/g, '') : ''
+  const price = [item.price, item.priceMax].filter(Boolean).join(' - ')
+  const mapUrl = mapsExternalUrl(item)
+  const lat = item.lat ?? item.latitude
+  const lng = item.lng ?? item.longitude
+  const rating = Number(item.rating ?? 0)
+  const reviewsCount = Number(item.reviewsCount ?? 0)
 
   return (
     <main style={{ background: '#F8FAFC', color: '#0F172A' }}>
-      <Navbar />
-      <section className="px-4 py-10">
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6">
-          <div>
-            {images[0] && <img src={images[0]} alt={title} className="w-full aspect-video object-cover rounded-2xl mb-5" />}
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#1E3A5F' }}>{kind === 'comercio' ? item.category ?? 'Comercio' : item.type ?? 'Hospedaje'}</p>
-            <h1 className="text-4xl font-black tracking-tight">{title}</h1>
-            {item.address && <p className="text-base mt-4" style={{ color: 'rgba(15,23,42,0.62)' }}>{item.address}</p>}
-            {kind === 'hospedaje' && <p className="text-xl font-black mt-4" style={{ color: '#1E3A5F' }}>{[item.price, item.priceMax].filter(Boolean).join(' - ')}</p>}
-            {item.description && <p className="text-base leading-relaxed mt-5" style={{ color: 'rgba(15,23,42,0.68)' }}>{item.description}</p>}
-            {images.length > 1 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
-                {images.slice(1).map((url: string) => <img key={url} src={url} alt="" className="aspect-video object-cover rounded-2xl" />)}
+      {chrome === 'public' && <Navbar />}
+      <section className={chrome === 'app' ? 'px-4 lg:px-8 pt-6 pb-28 lg:pb-10' : 'px-4 pt-8 pb-14'}>
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="rounded-[28px] overflow-hidden" style={{ background: '#0F172A' }}>
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px]">
+              <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-between gap-8">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3" style={{ color: '#CBD5E1' }}>
+                    {kind === 'comercio' ? item.category ?? 'Comercio' : item.type ?? 'Hospedaje'}
+                  </p>
+                  <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight" style={{ color: '#E2E8F0' }}>{title}</h1>
+                  {item.address && <p className="text-base mt-4 max-w-2xl" style={{ color: '#94A3B8' }}>{item.address}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {kind === 'hospedaje' && price && <span className="px-4 py-2 rounded-full text-sm font-black" style={{ background: '#E2E8F0', color: '#0F172A' }}>{price}</span>}
+                  {kind === 'comercio' && rating > 0 && <span className="px-4 py-2 rounded-full text-sm font-black" style={{ background: '#FEF3C7', color: '#92400e' }}>★ {rating.toFixed(1)}{reviewsCount > 0 ? ` · ${reviewsCount.toLocaleString('es-AR')} reseñas` : ''}</span>}
+                  {item.isVerified && <span className="px-4 py-2 rounded-full text-sm font-black" style={{ background: '#DCFCE7', color: '#166534' }}>Verificado</span>}
+                  {item.walkTime && <span className="px-4 py-2 rounded-full text-sm font-black" style={{ background: 'rgba(226,232,240,0.12)', color: '#E2E8F0' }}>{item.walkTime} desde UNNOBA</span>}
+                </div>
               </div>
-            )}
+              <div className="min-h-[260px] lg:min-h-[420px]" style={{ background: 'rgba(226,232,240,0.08)' }}>
+                {images[0] ? (
+                  <img src={images[0]} alt={title} className="w-full h-full object-cover" />
+                ) : (
+                  <PublicListingMap lat={lat} lng={lng} title={title} subtitle={item.address} />
+                )}
+              </div>
+            </div>
           </div>
-          <aside className="rounded-2xl p-5 h-fit space-y-3" style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
-            {item.phone && <a href={`tel:${String(item.phone).replace(/\D/g, '')}`} className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: '#0F172A', color: '#FFFFFF' }}>Contactar</a>}
-            {item.googleMapsUrl && <a href={item.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: 'rgba(15,23,42,0.06)', color: '#0F172A' }}>Ver mapa</a>}
-            <PublicShareButton title={title} text="Mirá este detalle en Recién Llegué" url={publicPath} />
-            <Link href={backHref} className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ color: 'rgba(15,23,42,0.62)' }}>Ver más en la app</Link>
-            <ReportListingIssue collection={kind === 'comercio' ? 'comercios' : 'hospedajes'} recordId={item.id} />
-          </aside>
+
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
+            <div className="space-y-6">
+              <section className="rounded-[24px] p-5 sm:p-6" style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
+                <h2 className="text-xl font-black mb-4">Información</h2>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <DetailRow label="Dirección" value={item.address} />
+                  <DetailRow label="Categoría" value={kind === 'comercio' ? item.category ?? 'Comercio' : item.type ?? 'Hospedaje'} />
+                  <DetailRow label="Teléfono" value={item.phone} />
+                  {kind === 'hospedaje' && <DetailRow label="Precio" value={price} />}
+                  {kind === 'hospedaje' && <DetailRow label="Capacidad" value={item.capacity} />}
+                  {kind === 'comercio' && rating > 0 && <DetailRow label="Calificación" value={`${rating.toFixed(1)}${reviewsCount > 0 ? ` sobre ${reviewsCount.toLocaleString('es-AR')} reseñas` : ''}`} />}
+                </div>
+                {item.description ? (
+                  <p className="text-base leading-relaxed mt-5" style={{ color: 'rgba(15,23,42,0.68)' }}>{item.description}</p>
+                ) : (
+                  <p className="text-sm leading-relaxed mt-5" style={{ color: 'rgba(15,23,42,0.55)' }}>
+                    Esta ficha reúne los datos disponibles para contactar o ubicar el lugar. Si encontrás información desactualizada, podés reportarla para que la revisemos.
+                  </p>
+                )}
+              </section>
+
+              <section className="rounded-[24px] overflow-hidden" style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
+                <div className="p-5 sm:p-6 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(15,23,42,0.42)' }}>Ubicación</p>
+                    <h2 className="text-xl font-black">Mapa</h2>
+                  </div>
+                  <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#0F172A', color: '#fff' }}>Abrir en Maps</a>
+                </div>
+                <div className="h-[320px]">
+                  <PublicListingMap lat={lat} lng={lng} title={title} subtitle={item.address} />
+                </div>
+              </section>
+
+              {images.length > 1 && (
+                <section className="rounded-[24px] p-5 sm:p-6" style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
+                  <h2 className="text-xl font-black mb-4">Fotos</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {images.slice(1).map((url: string) => <img key={url} src={url} alt="" className="aspect-video object-cover rounded-2xl" />)}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <aside className="rounded-[24px] p-5 h-fit space-y-3 sticky top-20" style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
+              {phoneDigits && <a href={`tel:${phoneDigits}`} className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: '#0F172A', color: '#FFFFFF' }}>Llamar</a>}
+              {kind === 'hospedaje' && phoneDigits && <a href={`https://wa.me/${phoneDigits.startsWith('54') ? phoneDigits : `54${phoneDigits}`}?text=${encodeURIComponent('Hola, vi tu hospedaje en Recién Llegué. Quería consultar disponibilidad, precio y requisitos.')}`} target="_blank" rel="noopener noreferrer" className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: '#DCFCE7', color: '#166534' }}>WhatsApp</a>}
+              <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ background: 'rgba(15,23,42,0.06)', color: '#0F172A' }}>Ver ubicación</a>
+              <PublicShareButton title={title} text="Mirá este detalle en Recién Llegué" url={publicPath} />
+              <Link href={backHref} className="block text-center rounded-xl px-4 py-3 text-sm font-bold" style={{ color: 'rgba(15,23,42,0.62)' }}>Ver más en la app</Link>
+              <ReportListingIssue collection={kind === 'comercio' ? 'comercios' : 'hospedajes'} recordId={item.id} />
+            </aside>
+          </div>
         </div>
       </section>
-      <Footer />
+      {chrome === 'public' && <Footer />}
     </main>
   )
 }

@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { MapPin, Users, BadgeCheck, Phone, BedDouble, ChevronRight } from 'lucide-react'
+import { MapPin, Users, BadgeCheck, Phone, BedDouble, ChevronRight, Heart, Copy, Check, SlidersHorizontal, MessageCircle } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
 import HeroParticles from '@/components/HeroParticles'
 import GeoPermissionBanner from '@/components/GeoPermissionBanner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useTracking } from '@/hooks/useTracking'
 import PublicShareButton from '@/components/PublicShareButton'
+import { useUser } from '@/hooks/useUser'
+import { loadSavedItems, upsertSavedItem, deleteSavedItem, type SavedItem } from '@/lib/user-saved-items'
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -42,6 +44,10 @@ interface Hospedaje {
   isVerified?:  boolean
   amenities?:   string[]
   images?:      string[]
+  availabilityStatus?: string
+  availableFrom?: string
+  availableSlots?: number | null
+  lastAvailabilityUpdate?: string
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -61,7 +67,25 @@ const TYPE_OPTIONS = [
 
 // ─── Card ─────────────────────────────────────────────────────
 
-function HospedajeCard({ h }: { h: Hospedaje }) {
+const AVAILABILITY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  available: { label: 'Disponible', color: '#166534', bg: '#DCFCE7' },
+  occupied: { label: 'Ocupado', color: '#991B1B', bg: '#FEE2E2' },
+  soon: { label: 'Disponible pronto', color: '#92400e', bg: '#FEF3C7' },
+}
+
+function HospedajeCard({
+  h,
+  saved,
+  onSave,
+  onRemove,
+  onContact,
+}: {
+  h: Hospedaje
+  saved?: SavedItem
+  onSave: (h: Hospedaje, patch?: Partial<SavedItem>) => void
+  onRemove: (saved: SavedItem) => void
+  onContact: (h: Hospedaje, channel: 'phone' | 'whatsapp') => void
+}) {
   const color = TYPE_COLORS[h.type] ?? '#0F172A'
   const priceLabel = h.priceMax
     ? `${h.price} – ${h.priceMax} / mes`
@@ -69,6 +93,13 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
   const [imgIdx, setImgIdx] = useState(0)
   const images = h.images ?? []
   const amenities = h.amenities ?? []
+  const availability = AVAILABILITY_LABELS[h.availabilityStatus || 'available'] ?? AVAILABILITY_LABELS.available
+  const suggestedMessage = `Hola, vi tu hospedaje en Recién Llegué. Quería consultar disponibilidad, precio y requisitos.`
+  const digits = h.phone?.replace(/\D/g, '') ?? ''
+  const whatsappNumber = digits ? (digits.startsWith('54') ? digits : `54${digits}`) : ''
+  const copyMessage = async () => {
+    await navigator.clipboard?.writeText(suggestedMessage).catch(() => {})
+  }
 
   return (
     <div className="app-card flex flex-col h-full overflow-hidden">
@@ -125,6 +156,9 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
                 <BadgeCheck size={10} /> Verificado
               </span>
             )}
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: availability.bg, color: availability.color }}>
+              {availability.label}
+            </span>
           </div>
           <h3 className="font-extrabold text-base leading-snug" style={{ color: 'var(--text-primary)' }}>
             {h.name}
@@ -151,6 +185,13 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
           <p className="text-sm font-extrabold mt-1" style={{ color: 'var(--accent)' }}>
             {priceLabel}
           </p>
+          {(h.availableFrom || h.availableSlots != null || h.lastAvailabilityUpdate) && (
+            <p className="text-[11px]" style={{ color: 'var(--text-muted-soft)' }}>
+              {h.availableFrom ? `Desde ${new Date(h.availableFrom).toLocaleDateString('es-AR')}` : ''}
+              {h.availableSlots != null ? `${h.availableFrom ? ' · ' : ''}${h.availableSlots} cupo${h.availableSlots === 1 ? '' : 's'}` : ''}
+              {h.lastAvailabilityUpdate ? ` · Actualizado ${new Date(h.lastAvailabilityUpdate).toLocaleDateString('es-AR')}` : ''}
+            </p>
+          )}
         </div>
 
         {/* Amenities */}
@@ -175,13 +216,26 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
 
         {/* CTA */}
         {h.phone ? (
-          <a
-            href={`tel:${h.phone.replace(/\D/g, '')}`}
-            className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-80 mt-auto"
-            style={{ background: '#0F172A', color: '#F59E0B' }}
-          >
-            <Phone size={13} /> {h.phone}
-          </a>
+          <div className="grid grid-cols-2 gap-2 mt-auto">
+            <a
+              href={`tel:${digits}`}
+              onClick={() => onContact(h, 'phone')}
+              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              style={{ background: '#0F172A', color: '#fff' }}
+            >
+              <Phone size={13} /> Llamar
+            </a>
+            <a
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(suggestedMessage)}`}
+              onClick={() => onContact(h, 'whatsapp')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              style={{ background: '#DCFCE7', color: '#166534' }}
+            >
+              <MessageCircle size={13} /> WhatsApp
+            </a>
+          </div>
         ) : (
           <button
             disabled
@@ -192,8 +246,30 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
           </button>
         )}
         <div className="grid grid-cols-2 gap-2">
+          {saved ? (
+            <button onClick={() => onRemove(saved)} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: '#FEE2E2', color: '#991B1B' }}>
+              <Heart size={13} fill="currentColor" /> Guardado
+            </button>
+          ) : (
+            <button onClick={() => onSave(h)} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}>
+              <Heart size={13} /> Guardar
+            </button>
+          )}
+          <button onClick={() => saved ? onSave(h, { compare: !saved.compare }) : onSave(h, { compare: true })} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: saved?.compare ? '#0F172A' : 'var(--surface-soft)', color: saved?.compare ? '#fff' : 'var(--accent)' }}>
+            <Check size={13} /> Comparar
+          </button>
+        </div>
+        <button onClick={copyMessage} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: 'var(--surface-soft)', color: 'var(--text-primary)' }}>
+          <Copy size={13} /> Copiar mensaje sugerido
+        </button>
+        {(h.availabilityStatus || 'available') === 'occupied' && (
+          <a href="/app/alertas" className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2" style={{ background: '#FEF3C7', color: '#92400e' }}>
+            Avisarme cuando vuelva a estar disponible
+          </a>
+        )}
+        <div className="grid grid-cols-2 gap-2">
           <a
-            href={`/hospedajes/${h.id}`}
+            href={`/app/hospedajes/${h.id}`}
             className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center transition-all hover:opacity-80"
             style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}
           >
@@ -212,12 +288,15 @@ export default function HospedajesPage() {
   const [hospedajes, setHospedajes] = useState<Hospedaje[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState('')
+  const [onlyAvailable, setOnlyAvailable] = useState(false)
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([])
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const mountTime = useRef(Date.now())
 
   const { hasAsked, requestPermission } = useGeolocation()
-  const { trackClick, trackTimeOnPage } = useTracking()
+  const { trackClick, trackContact, trackTimeOnPage } = useTracking()
+  const { user } = useUser()
 
   useEffect(() => {
     db.from('hospedajes').latest().limit(50).find()
@@ -225,6 +304,11 @@ export default function HospedajesPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) return
+    loadSavedItems(user.id, 'hospedaje').then(setSavedItems)
+  }, [user?.id])
 
   // Track tiempo en página al salir
   useEffect(() => {
@@ -243,9 +327,41 @@ export default function HospedajesPage() {
   }
 
   const filtered = useMemo(() => {
-    if (!selectedType) return hospedajes
-    return hospedajes.filter((item) => item.type === selectedType)
-  }, [hospedajes, selectedType])
+    let list = hospedajes
+    if (selectedType) list = list.filter((item) => item.type === selectedType)
+    if (onlyAvailable) list = list.filter((item) => (item.availabilityStatus || 'available') !== 'occupied')
+    return list
+  }, [hospedajes, selectedType, onlyAvailable])
+
+  const savedById = useMemo(() => new Map(savedItems.map((item) => [item.entityId, item])), [savedItems])
+  const compareItems = useMemo(() => savedItems.filter((item) => item.compare).slice(0, 3), [savedItems])
+  const compareHospedajes = useMemo(() => compareItems.map((saved) => hospedajes.find((h) => h.id === saved.entityId)).filter(Boolean) as Hospedaje[], [compareItems, hospedajes])
+
+  const refreshSaved = () => user?.id && loadSavedItems(user.id, 'hospedaje').then(setSavedItems)
+  const handleSave = async (h: Hospedaje, patch?: Partial<SavedItem>) => {
+    if (!user?.id) {
+      window.location.href = '/login'
+      return
+    }
+    const current = savedById.get(h.id)
+    await upsertSavedItem({
+      userId: user.id,
+      entityType: 'hospedaje',
+      entityId: h.id,
+      status: current?.status ?? 'saved',
+      notes: current?.notes ?? '',
+      compare: current?.compare ?? false,
+      ...patch,
+    })
+    refreshSaved()
+  }
+  const handleRemove = async (saved: SavedItem) => {
+    await deleteSavedItem(saved.id)
+    refreshSaved()
+  }
+  const handleContact = (h: Hospedaje, channel: 'phone' | 'whatsapp') => {
+    trackContact(h.id, 'hospedaje', channel, '/app/hospedajes')
+  }
 
   const verifiedCount = useMemo(
     () => hospedajes.filter((item) => item.isVerified).length,
@@ -344,7 +460,53 @@ export default function HospedajesPage() {
             )
           })}
         </div>
+        <button
+          onClick={() => setOnlyAvailable((value) => !value)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider"
+          style={{ background: onlyAvailable ? '#0F172A' : '#fff', color: onlyAvailable ? '#fff' : 'rgba(15,23,42,0.55)', border: '1px solid rgba(15,23,42,0.09)' }}
+        >
+          <SlidersHorizontal size={13} /> Solo disponibles
+        </button>
       </section>
+
+      {compareHospedajes.length > 0 && (
+        <section className="app-card p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="app-section-kicker mb-1">Comparador</p>
+              <h2 className="app-section-title text-lg">Tus opciones guardadas</h2>
+            </div>
+            <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{compareHospedajes.length}/3</span>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            {compareHospedajes.map((h) => (
+              <div key={h.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-soft)' }}>
+                <p className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{h.name}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{h.type} · {h.address}</p>
+                <p className="text-sm font-bold mt-2" style={{ color: 'var(--accent)' }}>{h.price}{h.priceMax ? ` - ${h.priceMax}` : ''}</p>
+                <select
+                  value={savedById.get(h.id)?.status ?? 'saved'}
+                  onChange={(event) => handleSave(h, { status: event.target.value as SavedItem['status'] })}
+                  className="w-full mt-3 rounded-xl px-3 py-2 text-xs outline-none"
+                  style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}
+                >
+                  <option value="saved">Guardado</option>
+                  <option value="contacted">Contacté</option>
+                  <option value="replied">Me respondió</option>
+                  <option value="discarded">Descartado</option>
+                </select>
+                <textarea
+                  value={savedById.get(h.id)?.notes ?? ''}
+                  onChange={(event) => handleSave(h, { notes: event.target.value })}
+                  placeholder="Notas personales"
+                  className="w-full mt-2 rounded-xl px-3 py-2 text-xs outline-none min-h-20"
+                  style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4">
         <div className="flex items-center gap-2">
@@ -378,7 +540,7 @@ export default function HospedajesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(h => (
             <div key={h.id} onClick={() => trackClick(h.id, 'hospedaje', '/app/hospedajes')}>
-              <HospedajeCard h={h} />
+              <HospedajeCard h={h} saved={savedById.get(h.id)} onSave={handleSave} onRemove={handleRemove} onContact={handleContact} />
             </div>
           ))}
         </div>

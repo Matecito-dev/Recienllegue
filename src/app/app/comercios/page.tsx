@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Star,
   Store,
+  Heart,
   X,
 } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
@@ -21,6 +22,7 @@ import { useGeolocation } from '@/hooks/useGeolocation'
 import { useTracking } from '@/hooks/useTracking'
 import { useUser } from '@/hooks/useUser'
 import PublicShareButton from '@/components/PublicShareButton'
+import { loadSavedItems, upsertSavedItem, deleteSavedItem, type SavedItem } from '@/lib/user-saved-items'
 
 interface Comercio {
   id: string
@@ -130,10 +132,18 @@ function ComercioCard({
   comercio,
   getDistanceKm,
   canClaim,
+  saved,
+  onSave,
+  onRemove,
+  onContact,
 }: {
   comercio: Comercio
   getDistanceKm?: (lat: number, lng: number) => number | null
   canClaim: boolean
+  saved?: SavedItem
+  onSave: (comercio: Comercio) => void
+  onRemove: (saved: SavedItem) => void
+  onContact: (comercio: Comercio) => void
 }) {
   const emoji = CATEGORY_EMOJI[comercio.category] ?? '📍'
 
@@ -214,6 +224,7 @@ function ComercioCard({
           {comercio.phone ? (
             <a
               href={`tel:${comercio.phone.replace(/\s/g, '')}`}
+              onClick={() => onContact(comercio)}
               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all hover:opacity-90"
               style={{ background: 'rgba(15,23,42,0.06)', color: '#1E3A5F' }}
             >
@@ -240,9 +251,20 @@ function ComercioCard({
             </a>
           )}
         </div>
+        <div onClick={(event) => event.stopPropagation()} className="grid grid-cols-1 gap-2">
+          {saved ? (
+            <button onClick={() => onRemove(saved)} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold" style={{ background: '#FEE2E2', color: '#991B1B' }}>
+              <Heart size={12} fill="currentColor" /> Guardado
+            </button>
+          ) : (
+            <button onClick={() => onSave(comercio)} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold" style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}>
+              <Heart size={12} /> Guardar comercio
+            </button>
+          )}
+        </div>
         <div onClick={(event) => event.stopPropagation()} className="grid grid-cols-2 gap-2">
           <a
-            href={`/comercios/${comercio.id}`}
+            href={`/app/comercios/${comercio.id}`}
             className="flex items-center justify-center py-2.5 rounded-xl text-[11px] font-bold transition-all hover:opacity-90"
             style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}
           >
@@ -327,12 +349,54 @@ function ComerciosContent() {
   const mountTime = useRef(Date.now())
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([])
 
   const { coords, hasAsked, requestPermission, getDistanceKm } = useGeolocation()
-  const { trackClick, trackSearch, trackTimeOnPage } = useTracking()
+  const { trackClick, trackContact, trackSearch, trackTimeOnPage } = useTracking()
   const { user } = useUser()
   const searchParams = useSearchParams()
   const canClaimCommerce = user?.role === 'dueno' || user?.role === 'comercio' || user?.role === 'admin'
+
+  const refreshSaved = useCallback(async () => {
+    if (!user?.id) {
+      setSavedItems([])
+      return
+    }
+    const items = await loadSavedItems(user.id, 'comercio')
+    setSavedItems(items)
+  }, [user?.id])
+
+  useEffect(() => {
+    void refreshSaved()
+  }, [refreshSaved])
+
+  const savedById = useMemo(() => {
+    return new Map(savedItems.map((item) => [item.entityId, item]))
+  }, [savedItems])
+
+  const handleSave = async (comercio: Comercio) => {
+    if (!user?.id) {
+      window.location.href = '/login'
+      return
+    }
+    await upsertSavedItem({
+      userId: user.id,
+      entityType: 'comercio',
+      entityId: comercio.id,
+      status: 'saved',
+      compare: false,
+    })
+    await refreshSaved()
+  }
+
+  const handleRemove = async (saved: SavedItem) => {
+    await deleteSavedItem(saved.id)
+    await refreshSaved()
+  }
+
+  const handleContact = (comercio: Comercio) => {
+    trackContact(comercio.id, 'comercio', 'phone', '/app/comercios')
+  }
 
   // Pre-fill search from URL ?q= param (e.g. from navbar search)
   useEffect(() => {
@@ -613,7 +677,15 @@ function ComerciosContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {paginated.map((comercio) => (
                 <div key={comercio.id} onClick={() => trackClick(comercio.id, 'comercio', '/app/comercios')}>
-                  <ComercioCard comercio={comercio} getDistanceKm={coords ? getDistanceKm : undefined} canClaim={canClaimCommerce} />
+                  <ComercioCard
+                    comercio={comercio}
+                    getDistanceKm={coords ? getDistanceKm : undefined}
+                    canClaim={canClaimCommerce}
+                    saved={savedById.get(comercio.id)}
+                    onSave={handleSave}
+                    onRemove={handleRemove}
+                    onContact={handleContact}
+                  />
                 </div>
               ))}
             </div>

@@ -5,6 +5,7 @@ import { useUser } from '@/hooks/useUser'
 import {
   Phone, ChevronRight, LogIn, LogOut, UserPlus,
   BedDouble, Bus, ShoppingBag, Megaphone, MapPin, ShieldPlus,
+  Heart, Bell, CheckCircle2, Store, Trophy,
 } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
 import { logout } from '@/app/actions/auth'
@@ -272,7 +273,19 @@ function autoTheme(kicker: string, title: string): string {
 interface Hospedaje {
   id: string; name: string; type: string; price: string; priceMax?: string
   address: string; phone?: string; isVerified?: boolean; isFeatured?: boolean
-  images?: string[]; amenities?: string[]
+  images?: string[]; amenities?: string[]; availabilityStatus?: string
+}
+
+interface Comercio {
+  id: string; name: string; category?: string; address?: string; rating?: number; isVerified?: boolean
+}
+
+interface SavedItem {
+  id: string
+  entityType: 'hospedaje' | 'comercio'
+  entityId: string
+  status?: string
+  notes?: string
 }
 
 // ─── Hero Messages (fallback cuando no hay hospedaje destacado) ─
@@ -779,9 +792,183 @@ function MuroPreview() {
   )
 }
 
+function SmartStartCard({ userId, missingFields, isDueno }: { userId?: string; missingFields: string[]; isDueno: boolean }) {
+  const [savedCount, setSavedCount] = useState(0)
+  const [alertsCount, setAlertsCount] = useState(0)
+
+  useEffect(() => {
+    if (!userId) return
+    db.from('user_saved_items').eq('userId', userId).find()
+      .then((rows: any[]) => setSavedCount(rows?.length ?? 0))
+      .catch(() => setSavedCount(0))
+    db.from('user_alerts').eq('userId', userId).find()
+      .then((rows: any[]) => setAlertsCount((rows ?? []).filter((row) => row.enabled !== false).length))
+      .catch(() => setAlertsCount(0))
+  }, [userId])
+
+  const steps = isDueno
+    ? [
+        { done: missingFields.length === 0, label: 'Completar datos de contacto', href: '/app/perfil' },
+        { done: false, label: 'Cargar o reclamar un lugar', href: '/app/propietario' },
+        { done: false, label: 'Actualizar disponibilidad y fotos', href: '/app/propietario' },
+      ]
+    : [
+        { done: missingFields.length === 0, label: 'Completar perfil', href: '/app/perfil' },
+        { done: savedCount > 0, label: 'Guardar favoritos', href: '/app/hospedajes' },
+        { done: alertsCount > 0, label: 'Crear una alerta', href: '/app/alertas' },
+      ]
+
+  return (
+    <section className="app-card p-5">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <p className="app-section-kicker mb-1">Para hacer ahora</p>
+          <h2 className="app-section-title text-lg">{isDueno ? 'Tu panel listo para publicar' : 'Tu llegada más ordenada'}</h2>
+        </div>
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}>
+          <CheckCircle2 size={18} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        {steps.map((step) => (
+          <a key={step.label} href={step.href} className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: step.done ? '#DCFCE7' : 'var(--surface-soft)', color: '#0F172A', textDecoration: 'none' }}>
+            <span className="inline-flex items-center gap-2 text-sm font-bold">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style={{ background: step.done ? '#166534' : '#fff', color: step.done ? '#fff' : 'rgba(15,23,42,0.35)' }}>
+                {step.done ? '✓' : '•'}
+              </span>
+              {step.label}
+            </span>
+            <ChevronRight size={15} style={{ color: 'rgba(15,23,42,0.35)' }} />
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SavedPreview({ userId }: { userId?: string }) {
+  const [items, setItems] = useState<SavedItem[]>([])
+  const [names, setNames] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!userId) return
+    db.from('user_saved_items').eq('userId', userId).latest().limit(3).find()
+      .then(async (rows: any[]) => {
+        const saved = (rows ?? []) as SavedItem[]
+        setItems(saved)
+        const pairs = await Promise.all(saved.map(async (item) => {
+          const collection = item.entityType === 'hospedaje' ? 'hospedajes' : 'comercios'
+          const row = await db.from(collection).findOne({ id: item.entityId }).catch(() => null)
+          return [item.entityId, row?.name ?? 'Publicación guardada'] as const
+        }))
+        setNames(Object.fromEntries(pairs))
+      })
+      .catch(() => setItems([]))
+  }, [userId])
+
+  return (
+    <section className="app-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="app-section-kicker mb-1">Guardados</p>
+          <h2 className="app-section-title text-lg">Tus favoritos</h2>
+        </div>
+        <a href="/app/favoritos" className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#0F172A' }}>Ver todos</a>
+      </div>
+      {items.length === 0 ? (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-soft)' }}>
+          <p className="text-sm font-bold" style={{ color: '#0F172A' }}>Todavía no guardaste opciones</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Guardá hospedajes o comercios para retomarlos desde acá.</p>
+          <a href="/app/hospedajes" className="inline-flex mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#0F172A', color: '#fff' }}>Explorar hospedajes</a>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <a key={item.id} href="/app/favoritos" className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: 'var(--surface-soft)', textDecoration: 'none' }}>
+              <span className="inline-flex items-center gap-2 min-w-0">
+                <Heart size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <span className="text-sm font-bold truncate" style={{ color: '#0F172A' }}>{names[item.entityId] ?? 'Guardado'}</span>
+              </span>
+              <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--text-muted-soft)' }}>{item.entityType}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ComerciosPreview() {
+  const [items, setItems] = useState<Comercio[]>([])
+
+  useEffect(() => {
+    db.from('comercios').limit(4).find()
+      .then((rows: any[]) => setItems((rows ?? []) as Comercio[]))
+      .catch(() => setItems([]))
+  }, [])
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <p className="app-section-kicker mb-0.5">Cerca tuyo</p>
+          <h2 className="app-section-title text-xl">Comercios útiles</h2>
+        </div>
+        <a href="/app/comercios" className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider hover:opacity-60 transition-opacity" style={{ color: '#0F172A' }}>
+          Ver todo <ChevronRight size={13} />
+        </a>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {(items.length ? items : [
+          { id: 'fallback-1', name: 'Buscá comida, kioscos y servicios', category: 'Comercios' },
+          { id: 'fallback-2', name: 'Usá el mapa para ver qué tenés cerca', category: 'Mapa' },
+        ]).map((item) => (
+          <a key={item.id} href={item.id.startsWith('fallback') ? '/app/comercios' : `/app/comercios/${item.id}`} className="app-card p-4 flex items-center gap-3" style={{ textDecoration: 'none' }}>
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}>
+              <ShoppingBag size={17} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-black truncate" style={{ color: '#0F172A' }}>{item.name}</p>
+              <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{item.category ?? item.address ?? 'Comercio'}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function UtilityStrip({ isDueno }: { isDueno: boolean }) {
+  const cards = isDueno
+    ? [
+        { icon: Store, title: 'Administrar lugares', body: 'Editá fotos, contacto y disponibilidad.', href: '/app/propietario' },
+        { icon: Trophy, title: 'Badge verificado', body: 'Pedilo para destacar tu comercio.', href: '/app/propietario' },
+      ]
+    : [
+        { icon: Bell, title: 'Alertas', body: 'Avisos por presupuesto, zona y tipo.', href: '/app/alertas' },
+        { icon: Heart, title: 'Favoritos', body: 'Notas y comparador en un solo lugar.', href: '/app/favoritos' },
+      ]
+
+  return (
+    <section className="grid sm:grid-cols-2 gap-3">
+      {cards.map(({ icon: Icon, title, body, href }) => (
+        <a key={title} href={href} className="app-card p-4 flex items-center gap-3" style={{ textDecoration: 'none' }}>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: '#0F172A', color: '#fff' }}>
+            <Icon size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-black" style={{ color: '#0F172A' }}>{title}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{body}</p>
+          </div>
+        </a>
+      ))}
+    </section>
+  )
+}
+
 // ─── Desktop Aside ─────────────────────────────────────────────
 
-function HomeDesktopAside({ username, isAdmin }: { username: string | null; isAdmin: boolean }) {
+function HomeDesktopAside({ username, isAdmin, userId, missingFields, isDueno }: { username: string | null; isAdmin: boolean; userId?: string; missingFields: string[]; isDueno: boolean }) {
   const quickLinks = isAdmin
     ? [{ label: 'Ir a Perfil', href: '/app/perfil' }, { label: 'Panel Admin', href: '/app/adm/dashboard' }]
     : [{ label: 'Ver Perfil', href: '/app/perfil' }, { label: 'Abrir Muro', href: '/app/muro' }]
@@ -812,6 +999,9 @@ function HomeDesktopAside({ username, isAdmin }: { username: string | null; isAd
           </form>
         )}
       </div>
+
+      {userId && <SmartStartCard userId={userId} missingFields={missingFields} isDueno={isDueno} />}
+      {userId && !isDueno && <SavedPreview userId={userId} />}
 
       {!username && (
         <div className="app-card p-4 space-y-1">
@@ -1130,7 +1320,15 @@ export default function InicioPage() {
       <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start mt-6 px-4 sm:px-5 lg:px-8">
         {/* Left col */}
         <div className="space-y-8">
+          {isLoggedIn && (
+          <div className="lg:hidden space-y-4">
+            <SmartStartCard userId={user?.id} missingFields={missingProfileFields} isDueno={isDueno} />
+            {!isDueno && <SavedPreview userId={user?.id} />}
+          </div>
+          )}
           <HospedajesSection />
+          <UtilityStrip isDueno={isDueno} />
+          <ComerciosPreview />
           {isLoggedIn && !isDueno && (
             <div className="hidden lg:block">
               <MoveStatusCard />
@@ -1144,7 +1342,7 @@ export default function InicioPage() {
         </div>
 
         {/* Right col desktop: aside with muro */}
-        <HomeDesktopAside username={user?.name || null} isAdmin={isAdmin} />
+        <HomeDesktopAside username={user?.name || null} isAdmin={isAdmin} userId={user?.id} missingFields={missingProfileFields} isDueno={isDueno} />
       </div>
     </div>
   )

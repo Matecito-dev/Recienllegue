@@ -1,12 +1,19 @@
 'use server'
 
 import { serverDb } from '@/lib/db-server'
+import { cookies } from 'next/headers'
 
 function clean(value: unknown) {
   return String(value ?? '').trim()
 }
 
 export async function reportListingIssue(input: Record<string, unknown>) {
+  const cookieStore = await cookies()
+  let userId = ''
+  try {
+    const raw = cookieStore.get('mb_user')?.value
+    userId = raw ? JSON.parse(decodeURIComponent(raw))?.id ?? '' : ''
+  } catch {}
   const collection = clean(input.collection)
   const recordId = clean(input.recordId)
   const reason = clean(input.reason)
@@ -24,10 +31,21 @@ export async function reportListingIssue(input: Record<string, unknown>) {
     status: 'pending',
     source: 'public_listing',
     createdAt: new Date().toISOString(),
+    userId,
   }
 
   try {
     const result = await serverDb.from('reports').insert(payload)
+    if (userId) {
+      await serverDb.from('user_contributions').insert({
+        userId,
+        type: 'report',
+        entityType: collection,
+        entityId: recordId,
+        points: 5,
+        createdAt: new Date().toISOString(),
+      }).catch(() => null)
+    }
     return { ok: true, data: result?.data ?? null }
   } catch {
     const result = await serverDb.from('muro_reports').insert({

@@ -37,6 +37,15 @@ export function useTracking() {
     insertEvent({ eventType: 'click_item', entityId, entityType, page, metadata: null })
   }, [insertEvent])
 
+  const trackContact = useCallback((
+    entityId: string,
+    entityType: 'hospedaje' | 'comercio',
+    channel: 'phone' | 'whatsapp',
+    page: string
+  ) => {
+    insertEvent({ eventType: 'contact_click', entityId, entityType, page, metadata: { channel } })
+  }, [insertEvent])
+
   const trackSearch = useCallback((query: string, page: string, resultCount?: number) => {
     if (!query.trim()) return
     if (searchTimer.current) clearTimeout(searchTimer.current)
@@ -60,5 +69,5 @@ export function useTracking() {
     insertEvent({ eventType: 'funnel', entityId: null, entityType: null, page: step, metadata: metadata ?? null })
   }, [insertEvent])
 
-  return { trackClick, trackSearch, trackTimeOnPage, trackFunnel }
+  return { trackClick, trackContact, trackSearch, trackTimeOnPage, trackFunnel }
 }

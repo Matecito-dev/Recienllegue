@@ -114,18 +114,20 @@ async function sendPushToUsers(userIds: string[], payload: { title: string; body
   return { sent: error ? 0 : uniqueUserIds.length, error: error?.message ?? null }
 }
 
-async function notifyMatchingHousingAlerts(hospedaje: Record<string, unknown>) {
+export async function notifyMatchingHousingAlerts(hospedaje: Record<string, unknown>, reason: 'new' | 'available_again' = 'new') {
   const alerts = await db.from('user_alerts').eq('enabled', true).find().catch(() => []) as any[]
   const matches = alerts.filter((alert) => matchesHousingAlert(alert, hospedaje))
   const userIds = matches.map((alert) => alert.userId).filter(Boolean)
   const price = hospedaje.price ? ` desde ${hospedaje.price}` : ''
-  const title = 'Nuevo hospedaje que coincide con tu alerta'
-  const body = `${hospedaje.name ?? 'Hay una nueva opción'}${price}. Revisalo antes de contactar.`
+  const title = reason === 'available_again'
+    ? 'Un hospedaje volvió a estar disponible'
+    : 'Nuevo hospedaje que coincide con tu alerta'
+  const body = `${hospedaje.name ?? 'Hay una opción para revisar'}${price}. Revisalo antes de contactar.`
   const result = await sendPushToUsers(userIds, {
     title,
     body,
     href: '/app/hospedajes',
-    type: 'housing_alert',
+    type: reason === 'available_again' ? 'housing_available_again' : 'housing_alert',
   })
 
   await Promise.all(matches.map(async (alert) => {
@@ -173,7 +175,16 @@ export async function createHospedaje(data: Record<string, unknown>) {
 }
 
 export async function updateHospedaje(id: string, data: Record<string, unknown>) {
-  return db.from('hospedajes').eq('id', id).merge(data)
+  const before = await db.from('hospedajes').findOne({ id }).catch(() => null)
+  const result = await db.from('hospedajes').eq('id', id).merge(data)
+  const nextStatus = String(data.availabilityStatus ?? before?.availabilityStatus ?? '')
+  const prevStatus = String(before?.availabilityStatus ?? 'available')
+  if (prevStatus === 'occupied' && nextStatus !== 'occupied') {
+    notifyMatchingHousingAlerts({ ...(before ?? {}), ...data, id }, 'available_again').catch((error) => {
+      console.error('[notifyAvailableAgain]', error)
+    })
+  }
+  return result
 }
 
 export async function assignHospedajeToCurrentOwner(id: string) {

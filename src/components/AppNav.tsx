@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Home, BedDouble, ShoppingBag, Bus, Megaphone, User, LayoutDashboard, ArrowLeft, Map, Bell, ShieldPlus, Store } from 'lucide-react'
+import { Home, BedDouble, ShoppingBag, Bus, Megaphone, User, LayoutDashboard, ArrowLeft, Map, Bell, ShieldPlus, Store, Heart } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import Image from 'next/image'
 import NotificationBell from './NotificationBell'
@@ -93,6 +93,15 @@ export default function AppNav() {
               style={{ background: pathname === '/app/propietario' ? '#0F172A' : 'rgba(15,23,42,0.06)', color: pathname === '/app/propietario' ? '#F59E0B' : 'rgba(15,23,42,0.5)', textDecoration: 'none' }}
             >
               <Store size={13} /> Propietario
+            </a>
+          )}
+          {!isAdmPage && (
+            <a
+              href="/app/favoritos"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all"
+              style={{ background: pathname === '/app/favoritos' ? '#0F172A' : 'rgba(15,23,42,0.06)', color: pathname === '/app/favoritos' ? '#fff' : 'rgba(15,23,42,0.5)', textDecoration: 'none' }}
+            >
+              <Heart size={13} /> Favoritos
             </a>
           )}
           <NotificationBell />

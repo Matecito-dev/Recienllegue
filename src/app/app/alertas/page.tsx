@@ -109,7 +109,7 @@ export default function AlertasPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#CBD5E1' }}>Alertas personalizadas</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: '#E2E8F0' }}>Avisame si aparece algo que encaja</h1>
         <p className="text-sm sm:text-base mt-2 max-w-2xl" style={{ color: '#94A3B8' }}>
-          Creá alertas de hospedaje por tipo, zona y presupuesto. Por ahora quedan guardadas en la app y preparadas para notificaciones.
+          Creá alertas de hospedaje por tipo, zona y presupuesto. Si activás push, te avisamos cuando aparece una opción compatible.
         </p>
       </section>
 

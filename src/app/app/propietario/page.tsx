@@ -22,6 +22,10 @@ type OwnerRecord = {
   price?: string
   priceMax?: string
   capacity?: string
+  availabilityStatus?: string
+  availableFrom?: string
+  availableSlots?: number | string | null
+  lastAvailabilityUpdate?: string
   description?: string
   images?: string[]
   publishedRecordId?: string
@@ -57,6 +61,10 @@ type ManagedPlace = {
   price?: string
   priceMax?: string
   capacity?: string
+  availabilityStatus?: string
+  availableFrom?: string
+  availableSlots?: number | string | null
+  lastAvailabilityUpdate?: string
   description?: string
   images?: string[]
   metrics?: { views: number; contacts: number }
@@ -266,6 +274,9 @@ function OwnerListingForm({ kind, onDone }: { kind: 'comercio' | 'hospedaje'; on
     price: '',
     priceMax: '',
     capacity: '',
+    availabilityStatus: 'available',
+    availableFrom: '',
+    availableSlots: '',
     description: '',
     images: '',
     evidenceText: '',
@@ -280,7 +291,7 @@ function OwnerListingForm({ kind, onDone }: { kind: 'comercio' | 'hospedaje'; on
     try {
       await createOwnerListing({ ...form, kind })
       setMessage('Enviado. Queda pendiente de aprobacion.')
-      setForm({ name: '', category: '', type: '', address: '', phone: '', whatsapp: '', price: '', priceMax: '', capacity: '', description: '', images: '', evidenceText: '' })
+      setForm({ name: '', category: '', type: '', address: '', phone: '', whatsapp: '', price: '', priceMax: '', capacity: '', availabilityStatus: 'available', availableFrom: '', availableSlots: '', description: '', images: '', evidenceText: '' })
       onDone()
     } catch (error: any) {
       setMessage(error?.message ?? 'No se pudo enviar')
@@ -316,6 +327,15 @@ function OwnerListingForm({ kind, onDone }: { kind: 'comercio' | 'hospedaje'; on
             <Field label="Precio desde"><TextInput value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="$180.000" /></Field>
             <Field label="Precio hasta"><TextInput value={form.priceMax} onChange={(e) => set('priceMax', e.target.value)} placeholder="Opcional" /></Field>
             <Field label="Capacidad"><TextInput value={form.capacity} onChange={(e) => set('capacity', e.target.value)} placeholder="1 persona, 2 personas" /></Field>
+            <Field label="Disponibilidad">
+              <select value={form.availabilityStatus} onChange={(e) => set('availabilityStatus', e.target.value)} className="w-full rounded-2xl px-4 py-3 text-sm outline-none" style={inputStyle}>
+                <option value="available">Disponible</option>
+                <option value="occupied">Ocupado</option>
+                <option value="soon">Disponible pronto</option>
+              </select>
+            </Field>
+            <Field label="Disponible desde"><TextInput type="date" value={form.availableFrom} onChange={(e) => set('availableFrom', e.target.value)} /></Field>
+            <Field label="Cupos"><TextInput type="number" value={form.availableSlots} onChange={(e) => set('availableSlots', e.target.value)} /></Field>
           </>
         )}
       </div>
@@ -434,6 +454,9 @@ function ManagedPlaceEditor({ place, onClose, onDone }: { place: ManagedPlace; o
     price: place.price ?? '',
     priceMax: place.priceMax ?? '',
     capacity: place.capacity ?? '',
+    availabilityStatus: place.availabilityStatus ?? 'available',
+    availableFrom: place.availableFrom ? String(place.availableFrom).slice(0, 10) : '',
+    availableSlots: place.availableSlots != null ? String(place.availableSlots) : '',
     description: place.description ?? '',
     images: (place.images ?? []).join('\n'),
     reason: '',
@@ -489,6 +512,15 @@ function ManagedPlaceEditor({ place, onClose, onDone }: { place: ManagedPlace; o
               <Field label="Precio desde"><TextInput value={form.price} onChange={(e) => set('price', e.target.value)} /></Field>
               <Field label="Precio hasta"><TextInput value={form.priceMax} onChange={(e) => set('priceMax', e.target.value)} /></Field>
               <Field label="Capacidad"><TextInput value={form.capacity} onChange={(e) => set('capacity', e.target.value)} /></Field>
+              <Field label="Disponibilidad">
+                <select value={form.availabilityStatus} onChange={(e) => set('availabilityStatus', e.target.value)} className="w-full rounded-2xl px-4 py-3 text-sm outline-none" style={inputStyle}>
+                  <option value="available">Disponible</option>
+                  <option value="occupied">Ocupado</option>
+                  <option value="soon">Disponible pronto</option>
+                </select>
+              </Field>
+              <Field label="Disponible desde"><TextInput type="date" value={form.availableFrom} onChange={(e) => set('availableFrom', e.target.value)} /></Field>
+              <Field label="Cupos"><TextInput type="number" value={form.availableSlots} onChange={(e) => set('availableSlots', e.target.value)} /></Field>
             </>
           )}
         </div>
@@ -546,6 +578,7 @@ function ManagedPlacesSection({ places, onDone }: { places: ManagedPlace[]; onDo
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(place.images?.length ?? 0) > 0 && <span className="text-[11px]" style={{ color: 'var(--text-muted-soft)' }}>{place.images?.length} imagen{place.images?.length === 1 ? '' : 'es'}</span>}
                   <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted-soft)' }}><Eye size={11} /> {place.metrics?.views ?? 0} clicks</span>
+                  <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted-soft)' }}>{place.metrics?.contacts ?? 0} contactos</span>
                 </div>
               </div>
             </article>
@@ -683,6 +716,10 @@ function OwnerContent() {
           price: item.price,
           priceMax: item.priceMax,
           capacity: item.capacity,
+          availabilityStatus: item.availabilityStatus,
+          availableFrom: item.availableFrom,
+          availableSlots: item.availableSlots,
+          lastAvailabilityUpdate: item.lastAvailabilityUpdate,
           description: item.description,
           images: item.images ?? [],
         }))
@@ -704,6 +741,10 @@ function OwnerContent() {
             price: record?.price,
             priceMax: record?.priceMax,
             capacity: record?.capacity,
+            availabilityStatus: record?.availabilityStatus,
+            availableFrom: record?.availableFrom,
+            availableSlots: record?.availableSlots,
+            lastAvailabilityUpdate: record?.lastAvailabilityUpdate,
             description: record?.description,
             images: Array.isArray(record?.images) ? record.images : [],
           } as ManagedPlace

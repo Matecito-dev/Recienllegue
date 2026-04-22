@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, ChevronRight, Mail, Phone, Save, Store, UserRound } from 'lucide-react'
+import { Camera, ChevronRight, Mail, Phone, Save, Store, Trophy, UserRound } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { getUserDb, publicDb as db } from '@/lib/db'
 import { logout } from '@/app/actions/auth'
@@ -19,6 +19,14 @@ interface Profile {
   contact?: string
   city_origin?: string
   year_of_study?: number | null
+}
+
+interface Contribution {
+  id: string
+  userId: string
+  type?: string
+  points?: number
+  createdAt?: string
 }
 
 function ProfileAvatar({
@@ -95,6 +103,7 @@ export default function PerfilPage() {
   const [contact, setContact] = useState('')
   const [cityOrigin, setCityOrigin] = useState('')
   const [yearOfStudy, setYearOfStudy] = useState('')
+  const [contributions, setContributions] = useState<Contribution[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -123,6 +132,16 @@ export default function PerfilPage() {
       })
       .finally(() => setLoading(false))
   }, [user])
+
+  useEffect(() => {
+    if (!user?.id) return
+    db.from('user_contributions').eq('userId', user.id).latest().limit(50).find()
+      .then((res: any) => setContributions(res as Contribution[]))
+      .catch(() => setContributions([]))
+  }, [user?.id])
+
+  const totalPoints = contributions.reduce((sum, item) => sum + Number(item.points ?? 0), 0)
+  const level = totalPoints >= 100 ? 'Referente local' : totalPoints >= 40 ? 'Colaborador activo' : totalPoints >= 10 ? 'Buen vecino' : 'Primeros pasos'
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -313,6 +332,24 @@ export default function PerfilPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="app-card p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}>
+                  <Trophy size={18} />
+                </div>
+                <div>
+                  <p className="app-section-kicker mb-1">Aportes</p>
+                  <h3 className="app-section-title text-lg">{totalPoints} puntos</h3>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Nivel: {level}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs leading-relaxed mt-4" style={{ color: 'var(--text-muted)' }}>
+                Sumás puntos cuando reportás datos desactualizados, ayudás a verificar lugares o aportás información útil para otros estudiantes.
+              </p>
             </div>
           </div>
 

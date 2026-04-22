@@ -109,12 +109,36 @@ const collections = {
     { name: 'read', type: 'boolean', required: false },
     { name: 'createdAt', type: 'date', required: false },
   ],
+  user_saved_items: [
+    { name: 'userId', type: 'text', required: true },
+    { name: 'entityType', type: 'text', required: true },
+    { name: 'entityId', type: 'text', required: true },
+    { name: 'status', type: 'text', required: false },
+    { name: 'notes', type: 'text', required: false },
+    { name: 'compare', type: 'boolean', required: false },
+    { name: 'createdAt', type: 'date', required: false },
+    { name: 'updatedAt', type: 'date', required: false },
+  ],
+  user_contributions: [
+    { name: 'userId', type: 'text', required: true },
+    { name: 'type', type: 'text', required: true },
+    { name: 'entityType', type: 'text', required: false },
+    { name: 'entityId', type: 'text', required: false },
+    { name: 'points', type: 'number', required: false },
+    { name: 'createdAt', type: 'date', required: false },
+  ],
 }
 
 const extraFields = {
   comercios: [
     { name: 'description', type: 'text', required: false },
     { name: 'images', type: 'json', required: false },
+  ],
+  hospedajes: [
+    { name: 'availabilityStatus', type: 'text', required: false },
+    { name: 'availableFrom', type: 'date', required: false },
+    { name: 'availableSlots', type: 'number', required: false },
+    { name: 'lastAvailabilityUpdate', type: 'date', required: false },
   ],
 }
 
