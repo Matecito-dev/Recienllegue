@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer style={{ background: '#0F172A', color: '#F59E0B' }}>
+    <footer style={{ background: '#0F172A', color: '#FFFFFF' }}>
       <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
           <img src="/logo.svg" alt="Recién Llegué" className="h-7 w-auto" style={{ filter: 'invert(1) opacity(0.8)' }} />

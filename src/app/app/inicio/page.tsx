@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useUser } from '@/hooks/useUser'
 import {
   Phone, ChevronRight, LogIn, LogOut, UserPlus,
-  BedDouble, Bus, ShoppingBag, Megaphone, MapPin,
+  BedDouble, Bus, ShoppingBag, Megaphone, MapPin, ShieldPlus,
 } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
 import { logout } from '@/app/actions/auth'
 import ProfileCompleteCard from '@/components/ProfileCompleteCard'
+import MoveStatusCard from '@/components/MoveStatusCard'
 
 // ─── Quick Actions ─────────────────────────────────────────────
 
@@ -16,6 +17,8 @@ const QUICK_ACTIONS = [
   { label: 'Hospedajes', Icon: BedDouble,   href: '/app/hospedajes',  bg: '#E2E8F0', color: '#0F172A' },
   { label: 'Colectivos', Icon: Bus,          href: '/app/transportes', bg: '#EDE9FE', color: '#6D28D9' },
   { label: 'Comercios',  Icon: ShoppingBag,  href: '/app/comercios',   bg: '#FCE7F3', color: '#9D174D' },
+  { label: 'Mapa',       Icon: MapPin,       href: '/app/mapa',        bg: '#DCFCE7', color: '#166534' },
+  { label: 'Farmacias',  Icon: ShieldPlus,   href: '/app/farmacias',   bg: '#FEE2E2', color: '#DC2626' },
   { label: 'Muro',       Icon: Megaphone,    href: '/app/muro',        bg: '#FEF3C7', color: '#92400E' },
 ]
 
@@ -838,52 +841,81 @@ function HomeDesktopAside({ username, isAdmin }: { username: string | null; isAd
 function PwaInstallPopup() {
   const [show, setShow] = useState(false)
   const [prompt, setPrompt] = useState<any>(null)
+  const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true
+    setInstalled(isStandalone)
+    if (isStandalone) return
+
+    const onInstalled = () => {
+      setInstalled(true)
+      setShow(false)
+      localStorage.setItem('pwa-installed', 'true')
+    }
+
     const h = (e: Event) => {
       e.preventDefault(); setPrompt(e)
-      if (window.matchMedia('(display-mode: standalone)').matches ||
-          localStorage.getItem('pwa-popup-dismissed') === 'true') return
+      const snoozedUntil = Number(localStorage.getItem('pwa-install-snoozed-until') ?? '0')
+      if (Date.now() < snoozedUntil || localStorage.getItem('pwa-installed') === 'true') return
 
       const visits = Number(localStorage.getItem('rl_app_visits') ?? '0') + 1
       localStorage.setItem('rl_app_visits', String(visits))
-      if (visits < 2) return
+      if (visits < 3) return
 
-      window.setTimeout(() => setShow(true), 8000)
+      window.setTimeout(() => setShow(true), 12000)
     }
     window.addEventListener('beforeinstallprompt', h)
-    return () => window.removeEventListener('beforeinstallprompt', h)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', h)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
   }, [])
 
-  if (!show) return null
+  if (!show || installed) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6"
-      style={{ background: 'rgba(15,23,42,0.82)', backdropFilter: 'blur(10px)' }}>
-      <div className="w-full max-w-sm rounded-[32px] p-8 text-center relative overflow-hidden"
+    <div className="fixed inset-x-0 bottom-20 lg:bottom-6 z-[80] flex justify-center px-4 pointer-events-none">
+      <div className="w-full max-w-sm rounded-[24px] p-5 text-left relative overflow-hidden pointer-events-auto"
         style={{ background: '#fff', boxShadow: '0 18px 50px rgba(15,23,42,0.22)' }}>
         <svg className="absolute top-0 right-0 h-32 opacity-10 pointer-events-none" viewBox="0 0 100 100">
           <circle cx="100" cy="0" r="80" fill="none" stroke="#0F172A" strokeWidth="1" />
           <circle cx="100" cy="0" r="60" fill="none" stroke="#0F172A" strokeWidth="1" />
         </svg>
-        <div className="w-20 h-20 rounded-3xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-lg relative z-10"
-          style={{ background: '#0F172A' }}>🧉</div>
-        <h2 className="text-2xl font-black mb-3 tracking-tight" style={{ color: '#0F172A' }}>Instalá la App</h2>
-        <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(15,23,42,0.58)' }}>
-          Agregá <span className="font-bold">Recienllegue</span> a tu pantalla de inicio para acceder más rápido.
-        </p>
-        <div className="space-y-3">
-          <button onClick={async () => { prompt?.prompt(); await prompt?.userChoice; setShow(false) }}
-            className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all active:scale-[0.98]"
+        <div className="flex items-start gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0"
+            style={{ background: '#0F172A' }}>🧉</div>
+          <div>
+            <h2 className="text-lg font-black mb-1 tracking-tight" style={{ color: '#0F172A' }}>Instalá Recién Llegué</h2>
+            <p className="text-xs leading-relaxed" style={{ color: 'rgba(15,23,42,0.58)' }}>
+              Acceso rápido, offline básico y avisos útiles cuando aparezcan novedades.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-[1fr_auto] gap-2 mt-5 relative z-10">
+          <button onClick={async () => {
+            prompt?.prompt()
+            const choice = await prompt?.userChoice
+            if (choice?.outcome === 'accepted') localStorage.setItem('pwa-installed', 'true')
+            setShow(false)
+          }}
+            className="py-3 rounded-2xl font-black text-xs tracking-wide transition-all active:scale-[0.98]"
             style={{ background: '#0F172A', color: '#F59E0B' }}>
-            INSTALAR AHORA
+            INSTALAR
           </button>
-          <button onClick={() => { localStorage.setItem('pwa-popup-dismissed', 'true'); setShow(false) }}
-            className="w-full py-2 text-xs font-bold uppercase tracking-widest transition-opacity opacity-40 hover:opacity-100"
-            style={{ color: '#0F172A' }}>
-            Tal vez más tarde
+          <button onClick={() => {
+            localStorage.setItem('pwa-install-snoozed-until', String(Date.now() + 7 * 24 * 60 * 60 * 1000))
+            setShow(false)
+          }}
+            className="px-4 py-3 rounded-2xl text-xs font-bold transition-opacity hover:opacity-70"
+            style={{ background: '#E2E8F0', color: '#0F172A' }}>
+            Después
           </button>
         </div>
+        <p className="text-[10px] mt-3 relative z-10" style={{ color: 'rgba(15,23,42,0.38)' }}>
+          Si la cerrás, volvemos a mostrarla en unos días.
+        </p>
       </div>
     </div>
   )
@@ -1088,11 +1120,22 @@ export default function InicioPage() {
         </div>
       )}
 
+      {isLoggedIn && !isDueno && (
+        <div className="lg:hidden px-4 sm:px-5 mt-4">
+          <MoveStatusCard />
+        </div>
+      )}
+
       {/* Main content */}
       <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start mt-6 px-4 sm:px-5 lg:px-8">
         {/* Left col */}
         <div className="space-y-8">
           <HospedajesSection />
+          {isLoggedIn && !isDueno && (
+            <div className="hidden lg:block">
+              <MoveStatusCard />
+            </div>
+          )}
           {/* Muro preview on mobile */}
           <div className="lg:hidden">
             <MuroPreview />

@@ -1,23 +1,26 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Home, BedDouble, ShoppingBag, Bus, Megaphone, User, LayoutDashboard, ArrowLeft } from 'lucide-react'
+import { Home, BedDouble, ShoppingBag, Bus, Megaphone, User, LayoutDashboard, ArrowLeft, Map, Bell, ShieldPlus, Store } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import Image from 'next/image'
+import NotificationBell from './NotificationBell'
 
 const links = [
   { label: 'Inicio',      href: '/app/inicio',      icon: Home },
   { label: 'Hospedajes',  href: '/app/hospedajes',  icon: BedDouble },
   { label: 'Comercios',   href: '/app/comercios',   icon: ShoppingBag },
   { label: 'Transportes', href: '/app/transportes', icon: Bus },
+  { label: 'Mapa',        href: '/app/mapa',         icon: Map },
+  { label: 'Farmacias',   href: '/app/farmacias',    icon: ShieldPlus },
   { label: 'Muro',        href: '/app/muro',        icon: Megaphone },
-  { label: 'Perfil',      href: '/app/perfil',      icon: User },
 ]
 
 export default function AppNav() {
   const pathname = usePathname()
   const { user } = useUser()
   const isAdmin = user?.role === 'admin'
+  const isOwner = user?.role === 'dueno' || user?.role === 'comercio' || isAdmin
   const isAdmPage = pathname.startsWith('/app/adm')
   const initials = user?.name
     ? user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -83,6 +86,24 @@ export default function AppNav() {
               <LayoutDashboard size={13} /> Admin
             </a>
           )}
+          {isOwner && !isAdmPage && (
+            <a
+              href="/app/propietario"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all"
+              style={{ background: pathname === '/app/propietario' ? '#0F172A' : 'rgba(15,23,42,0.06)', color: pathname === '/app/propietario' ? '#F59E0B' : 'rgba(15,23,42,0.5)', textDecoration: 'none' }}
+            >
+              <Store size={13} /> Propietario
+            </a>
+          )}
+          <NotificationBell />
+          <a
+            href="/app/perfil"
+            className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+            style={{ background: pathname === '/app/perfil' ? '#0F172A' : 'rgba(15,23,42,0.06)', color: pathname === '/app/perfil' ? '#F59E0B' : 'rgba(15,23,42,0.55)' }}
+            aria-label="Perfil"
+          >
+            <User size={15} />
+          </a>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
             background: `hsl(${avatarHue},42%,56%)`,
@@ -168,12 +189,15 @@ export default function AppNav() {
               </a>
             ) : (
               <a
-                href="/"
+                href="/app/notificaciones"
                 className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 rounded-[16px] transition-all"
-                style={{ color: 'rgba(15,23,42,0.35)' }}
+                style={{
+                  background: pathname === '/app/notificaciones' ? '#0F172A' : 'transparent',
+                  color: pathname === '/app/notificaciones' ? '#F59E0B' : 'rgba(15,23,42,0.35)',
+                }}
               >
-                <ArrowLeft size={16} strokeWidth={1.7} />
-                <span className="text-[8px] font-bold uppercase tracking-wide leading-none">Web</span>
+                <Bell size={16} strokeWidth={1.7} />
+                {pathname === '/app/notificaciones' && <span className="text-[8px] font-bold uppercase tracking-wide leading-none">Avisos</span>}
               </a>
             )}
           </>

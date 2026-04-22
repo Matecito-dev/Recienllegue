@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, ChevronRight, Mail, Phone, Save, UserRound } from 'lucide-react'
+import { Camera, ChevronRight, Mail, Phone, Save, Store, UserRound } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { getUserDb, publicDb as db } from '@/lib/db'
 import { logout } from '@/app/actions/auth'
@@ -240,6 +240,12 @@ export default function PerfilPage() {
                 <span className="text-sm font-bold">Volver al inicio</span>
                 <ChevronRight size={16} style={{ color: 'var(--text-muted-soft)' }} />
               </a>
+              {(profile?.role === 'dueno' || profile?.role === 'comercio' || profile?.role === 'admin') && (
+                <a href="/app/propietario" className="flex items-center justify-between rounded-2xl px-4 py-3 hover:bg-[var(--surface)] transition-colors" style={{ color: 'var(--text-primary)' }}>
+                  <span className="inline-flex items-center gap-2 text-sm font-bold"><Store size={15} /> Panel propietario</span>
+                  <ChevronRight size={16} style={{ color: 'var(--text-muted-soft)' }} />
+                </a>
+              )}
             </div>
           </aside>
         </section>

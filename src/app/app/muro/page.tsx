@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { publicDb as db, getUserDb } from '@/lib/db'
 import HeroParticles from '@/components/HeroParticles'
+import { generateId } from '@/lib/uuid'
 import {
   ChevronDown,
   ChevronUp,
@@ -40,12 +41,24 @@ interface Comment {
 }
 
 const CATEGORIES = [
-  { value: 'vendo', label: 'Vendo', color: '#0EA5E9' },
   { value: 'busco', label: 'Busco', color: '#3b82f6' },
+  { value: 'vendo', label: 'Vendo', color: '#0EA5E9' },
   { value: 'ofrezco', label: 'Ofrezco', color: '#8b5cf6' },
-  { value: 'perdido', label: 'Se perdió', color: '#f59e0b' },
+  { value: 'roommates', label: 'Roommates', color: '#10B981' },
+  { value: 'apuntes', label: 'Apuntes', color: '#F59E0B' },
+  { value: 'eventos', label: 'Eventos', color: '#EF4444' },
   { value: 'otro', label: 'Otro', color: '#6b7280' },
 ]
+
+const CATEGORY_PLACEHOLDERS: Record<string, { title: string; body: string }> = {
+  busco: { title: 'Ej: Busco habitación cerca de Monteagudo', body: 'Contá presupuesto, zona y fecha aproximada.' },
+  vendo: { title: 'Ej: Vendo escritorio', body: 'Agregá precio, estado, zona y contacto.' },
+  ofrezco: { title: 'Ej: Ofrezco clases particulares', body: 'Contá qué ofrecés, horarios y contacto.' },
+  roommates: { title: 'Ej: Busco compañero/a para compartir depto', body: 'Sumá zona, presupuesto y preferencias de convivencia.' },
+  apuntes: { title: 'Ej: Comparto resumen de Álgebra', body: 'Indicá materia, carrera y formato.' },
+  eventos: { title: 'Ej: Juntada de ingresantes', body: 'Sumá fecha, lugar y detalles.' },
+  otro: { title: 'Ej: Aviso importante', body: 'Contá detalles, contacto o ubicación.' },
+}
 
 function catColor(cat: string) {
   return CATEGORIES.find((item) => item.value === cat)?.color ?? '#6b7280'
@@ -211,7 +224,7 @@ function InlinePostForm({ token, userName, userId, userRole, onCreated }: {
               value={title}
               maxLength={60}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Vendo bicicleta rodado 26"
+              placeholder={CATEGORY_PLACEHOLDERS[category]?.title ?? 'Ej: Vendo bicicleta rodado 26'}
               className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
               style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
             />
@@ -226,7 +239,7 @@ function InlinePostForm({ token, userName, userId, userRole, onCreated }: {
               value={body}
               maxLength={400}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Contá detalles, precio, contacto o ubicación."
+              placeholder={CATEGORY_PLACEHOLDERS[category]?.body ?? 'Contá detalles, precio, contacto o ubicación.'}
               rows={3}
               className="w-full px-4 py-3 rounded-2xl text-sm outline-none resize-none"
               style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
@@ -282,6 +295,20 @@ function CommentsSection({ post, token, currentUserId, userName, onComment }: {
     if (res.data) {
       setComments((prev) => [res.data as Comment, ...prev])
       await userDb.from('muro_posts').eq('id', post.id).merge({ commentsCount: (post.commentsCount ?? 0) + 1 })
+      if (post.userId !== currentUserId) {
+        await userDb.from('notifications').insert({
+          id: generateId(),
+          userId: post.userId,
+          type: 'muro_reply',
+          title: 'Nueva respuesta en tu aviso',
+          body: `${userName} comentó: ${body.trim().slice(0, 90)}`,
+          href: '/app/muro',
+          read: false,
+          sentPush: false,
+          metadata: { postId: post.id, commentId: (res.data as Comment).id },
+          createdAt: new Date().toISOString(),
+        }).catch(() => {})
+      }
       onComment()
       setBody('')
     }

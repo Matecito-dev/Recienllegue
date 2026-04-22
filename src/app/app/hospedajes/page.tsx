@@ -7,6 +7,7 @@ import HeroParticles from '@/components/HeroParticles'
 import GeoPermissionBanner from '@/components/GeoPermissionBanner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useTracking } from '@/hooks/useTracking'
+import PublicShareButton from '@/components/PublicShareButton'
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -190,6 +191,16 @@ function HospedajeCard({ h }: { h: Hospedaje }) {
             Sin contacto cargado
           </button>
         )}
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={`/hospedajes/${h.id}`}
+            className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center transition-all hover:opacity-80"
+            style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}
+          >
+            Ver detalle
+          </a>
+          <PublicShareButton title={h.name} text="Mirá este hospedaje en Recién Llegué" url={`/hospedajes/${h.id}`} />
+        </div>
       </div>
     </div>
   )

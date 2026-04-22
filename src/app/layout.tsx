@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import Script from "next/script";
 import CookieBanner from "@/components/CookieBanner";
+import FirebaseClientInit from "@/components/FirebaseClientInit";
 import "./globals.css";
 
 const GA_ID  = "G-VCTWHCEV8H";
@@ -61,6 +62,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${inter.variable} min-h-screen antialiased`}
         style={{ background: "#F1F5F9", color: "#0F172A" }}
       >
+        <FirebaseClientInit />
         {children}
         <CookieBanner />
 

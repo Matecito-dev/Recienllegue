@@ -11,6 +11,8 @@ import {
   Flag,
   BarChart2,
   ArrowLeft,
+  Bell,
+  UserCheck,
 } from 'lucide-react'
 
 // ─── Nav links ────────────────────────────────────────────────
@@ -21,6 +23,8 @@ const NAV = [
   { href: '/app/adm/comercios',   label: 'Comercios',   Icon: Store           },
   { href: '/app/adm/transportes', label: 'Transportes', Icon: Car             },
   { href: '/app/adm/reportes',    label: 'Reportes',    Icon: Flag            },
+  { href: '/app/adm/propietarios', label: 'Propietarios', Icon: UserCheck      },
+  { href: '/app/adm/notificaciones', label: 'Avisos',    Icon: Bell            },
   { href: '/app/adm/analytics',   label: 'Analytics',   Icon: BarChart2       },
 ]
 

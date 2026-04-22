@@ -5,19 +5,19 @@ import type { NextRequest } from 'next/server'
  * CONFIGURACIÓN DE RUTAS
  * Edita estas listas según la estructura de tu aplicación.
  */
-const PROTECTED_ROUTES = ['/app/muro', '/app/perfil', '/app/adm', '/dashboard', '/crear']
+const PROTECTED_ROUTES = ['/app/muro', '/app/perfil', '/app/propietario', '/app/alertas', '/app/notificaciones', '/app/adm', '/dashboard', '/crear']
 const AUTH_ROUTES = ['/login', '/registro']
 
 const API_URL = process.env.NEXT_PUBLIC_MATECITODB_URL || 'http://localhost:3001'
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https: http:",
-  `connect-src 'self' ${API_URL} https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://region1.analytics.google.com https://www.googletagmanager.com https://tagmanager.google.com`,
-  "frame-src https://www.googletagmanager.com https://td.doubleclick.net",
+  `connect-src 'self' ${API_URL} https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://www.googleapis.com https://www.gstatic.com https://recienllegue-eb629.firebaseapp.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://region1.analytics.google.com https://www.googletagmanager.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com`,
+  "frame-src https://www.googletagmanager.com https://td.doubleclick.net https://bid.g.doubleclick.net",
   "worker-src 'self' blob:",
 ].join("; ")
 
@@ -47,5 +47,5 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   // Ajusta este matcher según las rutas que definas arriba
-  matcher: ['/app/muro/:path*', '/app/muro', '/app/perfil/:path*', '/app/perfil', '/app/adm/:path*', '/app/adm', '/dashboard/:path*', '/crear/:path*', '/login', '/registro']
+  matcher: ['/app/muro/:path*', '/app/muro', '/app/perfil/:path*', '/app/perfil', '/app/propietario/:path*', '/app/propietario', '/app/alertas/:path*', '/app/alertas', '/app/notificaciones/:path*', '/app/notificaciones', '/app/adm/:path*', '/app/adm', '/dashboard/:path*', '/crear/:path*', '/login', '/registro']
 }

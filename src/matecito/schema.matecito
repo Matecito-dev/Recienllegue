@@ -86,3 +86,86 @@ collection comercios (base) {
     delete : auth
   }
 }
+
+collection user_onboarding_state (base) {
+  userId                 text @required
+  status                 text
+  targetMoveDate         date
+  budgetMin              number
+  budgetMax              number
+  preferredHousingTypes  json
+  preferredZones         json
+  needsRoommates         boolean
+  notes                  text
+  createdAt              date
+  updatedAt              date
+
+  @rules {
+    list   : auth
+    view   : auth
+    create : auth
+    update : auth
+    delete : auth
+  }
+}
+
+collection user_alerts (base) {
+  userId           text @required
+  type             text
+  enabled          boolean
+  housingType      text
+  maxPrice         number
+  zones            json
+  keywords         json
+  category         text
+  frequency        text
+  lastTriggeredAt  date
+  createdAt        date
+  updatedAt        date
+
+  @rules {
+    list   : auth
+    view   : auth
+    create : auth
+    update : auth
+    delete : auth
+  }
+}
+
+collection notifications (base) {
+  userId    text @required
+  type      text
+  title     text @required
+  body      text
+  href      text
+  read      boolean
+  sentPush  boolean
+  metadata  json
+  createdAt date
+
+  @rules {
+    list   : auth
+    view   : auth
+    create : auth
+    update : auth
+    delete : auth
+  }
+}
+
+collection push_subscriptions (base) {
+  userId     text @required
+  endpoint   text @required
+  keys       json
+  userAgent  text
+  enabled    boolean
+  createdAt  date
+  updatedAt  date
+
+  @rules {
+    list   : auth
+    view   : auth
+    create : auth
+    update : auth
+    delete : auth
+  }
+}

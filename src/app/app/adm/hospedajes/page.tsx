@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2, X, Check, Upload, Image as ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Check, Upload, Image as ImageIcon, UserCheck } from 'lucide-react'
 import {
   createHospedaje,
   updateHospedaje,
   deleteHospedaje,
+  assignHospedajeToCurrentOwner,
 } from '@/app/actions/admin'
 import { publicDb as db, getUserDb } from '@/lib/db'
 
@@ -28,7 +29,9 @@ interface HospedajeRecord {
 
 // ─── Constants ────────────────────────────────────────────────
 
-type HospedajeForm = Omit<HospedajeRecord, 'id'>
+type HospedajeForm = Omit<HospedajeRecord, 'id'> & {
+  assignToOwner?: boolean
+}
 
 const EMPTY_FORM: HospedajeForm = {
   name: '',
@@ -42,6 +45,7 @@ const EMPTY_FORM: HospedajeForm = {
   isVerified: false,
   amenities: [],
   images: [],
+  assignToOwner: true,
 }
 
 const TYPES = ['Pension', 'Departamento', 'Casa de familia', 'Habitacion']
@@ -391,17 +395,30 @@ function HospedajeForm({
       </div>
 
       {/* Verified */}
-      <label className="flex items-center gap-2.5 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={form.isVerified}
-          onChange={e => set('isVerified', e.target.checked)}
-          className="w-4 h-4 accent-[#0F172A]"
-        />
-        <span className="text-sm font-medium" style={{ color: '#0F172A' }}>
-          Marcar como verificado
-        </span>
-      </label>
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.isVerified}
+            onChange={e => set('isVerified', e.target.checked)}
+            className="w-4 h-4 accent-[#0F172A]"
+          />
+          <span className="text-sm font-medium" style={{ color: '#0F172A' }}>
+            Marcar como verificado
+          </span>
+        </label>
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(form.assignToOwner)}
+            onChange={e => set('assignToOwner', e.target.checked)}
+            className="w-4 h-4 accent-[#0F172A]"
+          />
+          <span className="text-sm font-medium" style={{ color: '#0F172A' }}>
+            Mostrar también en mi panel propietario
+          </span>
+        </label>
+      </div>
 
       {/* Error */}
       {error && (
@@ -442,10 +459,14 @@ function RecordRow({
   r,
   onEdit,
   onDelete,
+  onAssign,
+  assigning,
 }: {
   r: HospedajeRecord
   onEdit: () => void
   onDelete: () => void
+  onAssign: () => void
+  assigning: boolean
 }) {
   const amenitiesPreview = (r.amenities ?? [])
     .slice(0, 4)
@@ -510,6 +531,15 @@ function RecordRow({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={onAssign}
+            disabled={assigning}
+            title="Mostrar en mi panel propietario"
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-70 disabled:opacity-40"
+            style={{ background: 'rgba(15,23,42,0.06)', color: '#0F172A' }}
+          >
+            <UserCheck size={13} />
+          </button>
+          <button
             onClick={onEdit}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
             style={{ background: 'rgba(15,23,42,0.06)', color: '#0F172A' }}
@@ -538,6 +568,8 @@ export default function AdminHospedajesPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [assigningId, setAssigningId] = useState<string | null>(null)
+  const [assignMessage, setAssignMessage] = useState<string | null>(null)
 
   useEffect(() => {
     db.from('hospedajes').latest().limit(50).find()
@@ -550,7 +582,8 @@ export default function AdminHospedajesPage() {
     setSubmitting(true)
     setSaveError(null)
     try {
-      const res = await createHospedaje(form as unknown as Record<string, unknown>)
+      const { assignToOwner, ...payload } = form
+      const res = await createHospedaje({ ...payload, __assignToCurrentOwner: Boolean(assignToOwner) } as unknown as Record<string, unknown>)
       if (res?.data) {
         setRecords(prev => [res.data, ...prev])
         setShowAdd(false)
@@ -571,7 +604,8 @@ export default function AdminHospedajesPage() {
     setSubmitting(true)
     setSaveError(null)
     try {
-      const res = await updateHospedaje(id, form as unknown as Record<string, unknown>)
+      const { assignToOwner, ...payload } = form
+      const res = await updateHospedaje(id, payload as unknown as Record<string, unknown>)
       if (res?.data) {
         setRecords(prev => prev.map(r => r.id === id ? res.data : r))
       } else {
@@ -596,6 +630,23 @@ export default function AdminHospedajesPage() {
     }
   }
 
+  const handleAssignToMe = async (id: string) => {
+    setAssigningId(id)
+    setAssignMessage(null)
+    try {
+      const res = await assignHospedajeToCurrentOwner(id)
+      if ((res as any)?.error) {
+        setAssignMessage((res as any).error.message ?? 'No se pudo asignar')
+      } else {
+        setAssignMessage('Hospedaje vinculado a tu panel propietario.')
+      }
+    } catch (error: any) {
+      setAssignMessage(error?.message ?? 'No se pudo asignar')
+    } finally {
+      setAssigningId(null)
+    }
+  }
+
   const toForm = (data: HospedajeRecord): HospedajeForm => ({
     name: data.name ?? '',
     type: data.type ?? 'Pension',
@@ -608,6 +659,7 @@ export default function AdminHospedajesPage() {
     isVerified: data.isVerified ?? false,
     amenities: data.amenities ?? [],
     images: data.images ?? [],
+    assignToOwner: false,
   })
 
   return (
@@ -634,6 +686,12 @@ export default function AdminHospedajesPage() {
           </button>
         )}
       </div>
+
+      {assignMessage && (
+        <div className="mb-5 px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: assignMessage.includes('vinculado') ? '#DCFCE7' : '#FEE2E2', color: assignMessage.includes('vinculado') ? '#166534' : '#991B1B' }}>
+          {assignMessage}
+        </div>
+      )}
 
       {/* Add form */}
       {showAdd && (
@@ -680,6 +738,8 @@ export default function AdminHospedajesPage() {
                   r={r}
                   onEdit={() => { setEditId(r.id); setShowAdd(false) }}
                   onDelete={() => handleDelete(r.id)}
+                  onAssign={() => handleAssignToMe(r.id)}
+                  assigning={assigningId === r.id}
                 />
               )}
             </div>

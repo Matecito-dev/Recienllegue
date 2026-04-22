@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import AppNav from '@/components/AppNav'
 import GlobalParticles from '@/components/GlobalParticles'
+import PushSubscriptionRegistrar from '@/components/PushSubscriptionRegistrar'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -29,6 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Contenido por encima del canvas (z-index: 0) */}
       <div style={{ position: 'relative', zIndex: 1 }}>
+        <PushSubscriptionRegistrar />
         <AppNav />
         <main className="pb-16 lg:pb-0 relative">
           {/* Frosted glass column — el bg de partículas se ve a través */}

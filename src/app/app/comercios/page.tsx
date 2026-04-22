@@ -11,6 +11,7 @@ import {
   Search,
   ShoppingBag,
   Star,
+  Store,
   X,
 } from 'lucide-react'
 import { publicDb as db } from '@/lib/db'
@@ -18,6 +19,8 @@ import HeroParticles from '@/components/HeroParticles'
 import GeoPermissionBanner from '@/components/GeoPermissionBanner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useTracking } from '@/hooks/useTracking'
+import { useUser } from '@/hooks/useUser'
+import PublicShareButton from '@/components/PublicShareButton'
 
 interface Comercio {
   id: string
@@ -123,7 +126,15 @@ function walkLabel(meters: number): string {
   return `${Math.round(mins / 60)}h a pie`
 }
 
-function ComercioCard({ comercio, getDistanceKm }: { comercio: Comercio; getDistanceKm?: (lat: number, lng: number) => number | null }) {
+function ComercioCard({
+  comercio,
+  getDistanceKm,
+  canClaim,
+}: {
+  comercio: Comercio
+  getDistanceKm?: (lat: number, lng: number) => number | null
+  canClaim: boolean
+}) {
   const emoji = CATEGORY_EMOJI[comercio.category] ?? '📍'
 
   const userDistanceLabel = (() => {
@@ -229,6 +240,26 @@ function ComercioCard({ comercio, getDistanceKm }: { comercio: Comercio; getDist
             </a>
           )}
         </div>
+        <div onClick={(event) => event.stopPropagation()} className="grid grid-cols-2 gap-2">
+          <a
+            href={`/comercios/${comercio.id}`}
+            className="flex items-center justify-center py-2.5 rounded-xl text-[11px] font-bold transition-all hover:opacity-90"
+            style={{ background: 'var(--surface-soft)', color: 'var(--accent)' }}
+          >
+            Ver detalle
+          </a>
+          <PublicShareButton title={comercio.name} text="Mirá este comercio en Recién Llegué" url={`/comercios/${comercio.id}`} />
+        </div>
+        {canClaim && (
+          <a
+            href={`/app/propietario?claim=${encodeURIComponent(comercio.id)}&name=${encodeURIComponent(comercio.name)}`}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all hover:opacity-90"
+            style={{ background: '#FEF3C7', color: '#92400e' }}
+          >
+            <Store size={12} /> ¿Es tu comercio? Reclamar
+          </a>
+        )}
       </div>
     </article>
   )
@@ -299,7 +330,9 @@ function ComerciosContent() {
 
   const { coords, hasAsked, requestPermission, getDistanceKm } = useGeolocation()
   const { trackClick, trackSearch, trackTimeOnPage } = useTracking()
+  const { user } = useUser()
   const searchParams = useSearchParams()
+  const canClaimCommerce = user?.role === 'dueno' || user?.role === 'comercio' || user?.role === 'admin'
 
   // Pre-fill search from URL ?q= param (e.g. from navbar search)
   useEffect(() => {
@@ -580,7 +613,7 @@ function ComerciosContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {paginated.map((comercio) => (
                 <div key={comercio.id} onClick={() => trackClick(comercio.id, 'comercio', '/app/comercios')}>
-                  <ComercioCard comercio={comercio} getDistanceKm={coords ? getDistanceKm : undefined} />
+                  <ComercioCard comercio={comercio} getDistanceKm={coords ? getDistanceKm : undefined} canClaim={canClaimCommerce} />
                 </div>
               ))}
             </div>

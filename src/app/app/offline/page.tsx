@@ -1,6 +1,21 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 export default function OfflinePage() {
+  const [online, setOnline] = useState(false)
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    update()
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
       <div
@@ -22,16 +37,26 @@ export default function OfflinePage() {
         Sin conexión
       </h1>
       <p className="text-sm leading-relaxed max-w-xs mb-8" style={{ color: 'rgba(15,23,42,0.5)' }}>
-        No hay internet por ahora. Podés seguir viendo el contenido que ya cargaste antes.
+        {online
+          ? 'La conexión volvió. Podés reintentar para actualizar la app.'
+          : 'No hay internet por ahora. Podés seguir viendo secciones que ya cargaste antes.'}
       </p>
 
-      <button
-        onClick={() => window.location.reload()}
-        className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-80"
-        style={{ background: '#0F172A', color: '#F59E0B' }}
-      >
-        Reintentar
-      </button>
+      <div className="grid gap-2 w-full max-w-xs">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+          style={{ background: '#0F172A', color: '#F59E0B' }}
+        >
+          {online ? 'Actualizar ahora' : 'Reintentar'}
+        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <a href="/app/inicio" className="px-4 py-3 rounded-xl text-xs font-bold" style={{ background: '#E2E8F0', color: '#0F172A', textDecoration: 'none' }}>Inicio</a>
+          <a href="/app/hospedajes" className="px-4 py-3 rounded-xl text-xs font-bold" style={{ background: '#E2E8F0', color: '#0F172A', textDecoration: 'none' }}>Hospedajes</a>
+        </div>
+        <a href="/app/farmacias" className="px-4 py-3 rounded-xl text-xs font-bold" style={{ background: '#E2E8F0', color: '#0F172A', textDecoration: 'none' }}>Farmacias de turno</a>
+        <a href="/app/notificaciones" className="px-4 py-3 rounded-xl text-xs font-bold" style={{ background: '#E2E8F0', color: '#0F172A', textDecoration: 'none' }}>Ver notificaciones guardadas</a>
+      </div>
     </div>
   )
 }

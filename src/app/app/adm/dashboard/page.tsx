@@ -165,12 +165,13 @@ export default function AdminDashboardPage() {
       db.from('muro').count(),
       db.from('muro_reports').count(),
       db.from('hospedajes').count(),
-    ]).then(([users, posts, rpts, hosp]) => {
+      db.from('owner_claims').eq('status', 'pending').count().catch(() => 0),
+    ]).then(([users, posts, rpts, hosp, ownerClaims]) => {
       setStats([
         { label: 'Usuarios registrados', value: users, Icon: Users,        color: '#3b82f6' },
         { label: 'Posts en el muro',     value: posts, Icon: MessageSquare, color: '#8b5cf6' },
         { label: 'Reportes pendientes',  value: rpts,  Icon: Flag,         color: '#ef4444' },
-        { label: 'Hospedajes cargados',  value: hosp,  Icon: BedDouble,    color: '#0EA5E9' },
+        { label: 'Reclamos propietarios', value: ownerClaims, Icon: BedDouble, color: '#0EA5E9' },
       ])
     })
 
@@ -204,6 +205,7 @@ export default function AdminDashboardPage() {
         {[
           { label: 'Hospedajes', href: '/app/adm/hospedajes' },
           { label: 'Comercios',  href: '/app/adm/comercios' },
+          { label: 'Propietarios', href: '/app/adm/propietarios' },
           { label: 'Transportes', href: '/app/adm/transportes' },
           { label: 'Mensajes del carrusel', href: '/app/adm/hero_messages' },
         ].map(l => (
