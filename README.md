@@ -124,6 +124,7 @@ public/
   firebase-messaging-sw.js
 ```
 
+<<<<<<< HEAD
 ## Current Functional Areas
 
 - `/app/inicio`
@@ -178,3 +179,15 @@ Los próximos pasos del producto están orientados a:
 ## Status
 
 El detalle de versiones y evolución del producto está en [CHANGELOG.md](CHANGELOG.md).
+=======
+## Roadmap pendiente
+
+- Perfil académico UNNOBA por usuario
+- Materias, horarios y alarmas
+- Próxima clase en inicio
+- Planes de estudio conectados a experiencia diaria
+
+## Estado
+
+Ver [CHANGELOG.md](CHANGELOG.md).
+>>>>>>> 9e7e605fbc276f187cab4cf930ef877e6f25a128
