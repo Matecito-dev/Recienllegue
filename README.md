@@ -60,54 +60,6 @@ scripts/
   ...scripts de seed, migración y scraping todavía útiles
 ```
 
-## Desarrollo local
-
-1. Instalar dependencias:
-
-```bash
-npm install
-```
-
-2. Configurar variables en `.env.local`.
-
-3. Levantar desarrollo:
-
-```bash
-npm run dev
-```
-
-4. Verificar antes de subir:
-
-```bash
-npx tsc --noEmit
-npm run build
-```
-
-## Variables sensibles
-
-No se debe subir a GitHub:
-
-- `.env`, `.env.local` y variantes
-- service keys de MatecitoDB
-- tokens/cookies de sesión
-- credenciales privadas de Firebase Admin o cualquier private key
-
-Notas:
-
-- La config web pública de Firebase puede existir en cliente y en el service worker.
-- Si alguna service key quedó expuesta en scripts viejos, hay que rotarla aunque el archivo se elimine del repo actual.
-
-## Scripts
-
-Se dejaron en `scripts/` solo utilidades que todavía pueden servir para:
-
-- crear colecciones/campos
-- seeds
-- migraciones
-- scrapers
-
-Se eliminaron scripts viejos/inseguros con claves hardcodeadas y un `package.json` aislado de `scripts/` que ya no era necesario.
-
 ## Roadmap pendiente
 
 - Perfil académico UNNOBA por usuario
