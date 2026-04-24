@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { publicDb as db, getUserDb } from '@/lib/db'
+import { verifiedMuroSeeds } from '@/data/muro-seeds'
 import HeroParticles from '@/components/HeroParticles'
 import { generateId } from '@/lib/uuid'
 import {
@@ -59,6 +60,10 @@ const CATEGORY_PLACEHOLDERS: Record<string, { title: string; body: string }> = {
   eventos: { title: 'Ej: Juntada de ingresantes', body: 'Sumá fecha, lugar y detalles.' },
   otro: { title: 'Ej: Aviso importante', body: 'Contá detalles, contacto o ubicación.' },
 }
+
+const EDITORIAL_USER_ID = 'seed-editorial-recien-llegue'
+const FEED_EDITORIAL_LIMIT = 2
+const editorialTitles = new Set(verifiedMuroSeeds.map((item) => item.post.title))
 
 function catColor(cat: string) {
   return CATEGORIES.find((item) => item.value === cat)?.color ?? '#6b7280'
@@ -583,6 +588,13 @@ export default function MuroPage() {
   }
 
   const currentUserName = user?.name ?? 'Anónimo'
+  const editorialPosts = posts.filter((post) => post.userId === EDITORIAL_USER_ID)
+  const communityPosts = posts.filter((post) => post.userId !== EDITORIAL_USER_ID)
+  const editorialFeedPosts = filterCat ? editorialPosts : editorialPosts.slice(0, FEED_EDITORIAL_LIMIT)
+  const visiblePosts = communityPosts.length > 0 ? communityPosts : editorialFeedPosts
+  const hiddenEditorialSeeds = !filterCat
+    ? verifiedMuroSeeds.filter((item) => !editorialFeedPosts.some((post) => post.title === item.post.title))
+    : []
 
   return (
     <div className="px-4 lg:px-8 py-6 max-w-6xl mx-auto space-y-6">
@@ -613,7 +625,7 @@ export default function MuroPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl p-3" style={{ background: '#E2E8F0' }}>
-              <p className="text-xl font-black leading-none" style={{ color: '#F59E0B' }}>{posts.length}</p>
+              <p className="text-xl font-black leading-none" style={{ color: '#F59E0B' }}>{visiblePosts.length}</p>
               <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>avisos visibles</p>
             </div>
             <div className="rounded-2xl p-3" style={{ background: '#E2E8F0' }}>
@@ -638,6 +650,48 @@ export default function MuroPage() {
       <section className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
         <div className="space-y-4">
           <InlinePostForm token={token} userName={currentUserName} userId={user?.id ?? ''} userRole={userRole} onCreated={(post) => setPosts((prev) => [post, ...prev])} />
+
+          {!filterCat && hiddenEditorialSeeds.length > 0 && (
+            <div className="app-card p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                <div>
+                  <p className="app-section-kicker mb-1">Verificado</p>
+                  <h2 className="app-section-title text-xl">Información útil esta semana</h2>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Mientras arranca la comunidad, dejamos datos oficiales para resolver cosas puntuales.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3 mt-4">
+                {hiddenEditorialSeeds.map((item) => (
+                  <a
+                    key={item.post.title}
+                    href={item.verification.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-2xl p-4 transition-opacity hover:opacity-85"
+                    style={{ background: 'var(--surface-soft)', textDecoration: 'none' }}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        style={{ background: `${catColor(item.post.category)}18`, color: catColor(item.post.category) }}
+                      >
+                        {catLabel(item.post.category)}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted-soft)' }}>
+                        {item.verification.verifiedAt}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>{item.post.title}</p>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.verification.note}</p>
+                    <p className="text-[11px] mt-3 font-bold" style={{ color: 'var(--accent)' }}>{item.verification.label}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="app-card p-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -700,18 +754,18 @@ export default function MuroPage() {
                 </div>
               ))}
             </div>
-          ) : posts.length === 0 ? (
+          ) : visiblePosts.length === 0 ? (
             <div className="app-card px-5 py-12 text-center">
               <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
                 {filterCat ? 'No hay avisos en esta categoría' : 'Todavía no hay avisos'}
               </p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Sé el primero en publicar.
+                {communityPosts.length === 0 && !filterCat ? 'Sé el primero en publicar. Mientras tanto, tenés algunos datos verificados arriba.' : 'Sé el primero en publicar.'}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {posts.map((post) => (
+              {visiblePosts.map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
